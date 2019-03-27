@@ -10,11 +10,11 @@
     describe("A spoiler message", function () {
 
         it("can be received with a hint",
-            mock.initConverseWithPromises(
+            mock.initConverse(
                 null, ['rosterGroupsFetched'], {},
-                async function (done, _converse) {
+                async (done, _converse) => {
 
-            test_utils.createContacts(_converse, 'current');
+            await test_utils.waitForRoster(_converse, 'current');
             const sender_jid = mock.cur_names[0].replace(/ /g,'.').toLowerCase() + '@localhost';
 
             /* <message to='romeo@montague.net/orchard' from='juliet@capulet.net/balcony' id='spoiler2'>
@@ -34,8 +34,9 @@
                       'xmlns': 'urn:xmpp:spoiler:0',
                     }).t(spoiler_hint)
                 .tree();
-            _converse.chatboxes.onMessage(msg);
+            await _converse.chatboxes.onMessage(msg);
 
+            await test_utils.waitUntil(() => _converse.api.chats.get().length === 2);
             const view = _converse.chatboxviews.get(sender_jid);
             await test_utils.waitUntil(() => view.model.vcard.get('fullname') === 'Max Frankfurter')
             expect(view.el.querySelector('.chat-msg__author').textContent.trim()).toBe('Max Frankfurter');
@@ -47,11 +48,11 @@
         }));
 
         it("can be received without a hint",
-            mock.initConverseWithPromises(
+            mock.initConverse(
                 null, ['rosterGroupsFetched'], {},
-                async function (done, _converse) {
+                async (done, _converse) => {
 
-            test_utils.createContacts(_converse, 'current');
+            await test_utils.waitForRoster(_converse, 'current');
             const sender_jid = mock.cur_names[0].replace(/ /g,'.').toLowerCase() + '@localhost';
             /* <message to='romeo@montague.net/orchard' from='juliet@capulet.net/balcony' id='spoiler2'>
              *      <body>And at the end of the story, both of them die! It is so tragic!</body>
@@ -68,7 +69,8 @@
                   .c('spoiler', {
                       'xmlns': 'urn:xmpp:spoiler:0',
                     }).tree();
-            _converse.chatboxes.onMessage(msg);
+            await _converse.chatboxes.onMessage(msg);
+            await test_utils.waitUntil(() => _converse.api.chats.get().length === 2);
             const view = _converse.chatboxviews.get(sender_jid);
             await test_utils.waitUntil(() => view.model.vcard.get('fullname') === 'Max Frankfurter')
             expect(_.includes(view.el.querySelector('.chat-msg__author').textContent, 'Max Frankfurter')).toBeTruthy();
@@ -80,13 +82,11 @@
         }));
 
         it("can be sent without a hint",
-            mock.initConverseWithPromises(
+            mock.initConverse(
                 null, ['rosterGroupsFetched', 'chatBoxesFetched'], {},
-                async function (done, _converse) {
+                async (done, _converse) => {
 
-            test_utils.createContacts(_converse, 'current', 1);
-            _converse.emit('rosterContactsFetched');
-
+            await test_utils.waitForRoster(_converse, 'current', 1);
             test_utils.openControlBox();
             const contact_jid = mock.cur_names[0].replace(/ /g,'.').toLowerCase() + '@localhost';
 
@@ -101,7 +101,7 @@
             _converse.connection._dataRecv(test_utils.createRequest(presence));
             await test_utils.openChatBoxFor(_converse, contact_jid);
             await test_utils.waitUntilDiscoConfirmed(_converse, contact_jid+'/phone', [], [Strophe.NS.SPOILER]);
-            const view = _converse.chatboxviews.get(contact_jid);
+            const view = _converse.api.chatviews.get(contact_jid);
             spyOn(_converse.connection, 'send');
 
             await test_utils.waitUntil(() => view.el.querySelector('.toggle-compose-spoiler'));
@@ -155,13 +155,11 @@
         }));
 
         it("can be sent with a hint",
-            mock.initConverseWithPromises(
+            mock.initConverse(
                 null, ['rosterGroupsFetched', 'chatBoxesFetched'], {},
-                async function (done, _converse) {
+                async (done, _converse) => {
 
-            test_utils.createContacts(_converse, 'current', 1);
-            _converse.emit('rosterContactsFetched');
-
+            await test_utils.waitForRoster(_converse, 'current', 1);
             test_utils.openControlBox();
             const contact_jid = mock.cur_names[0].replace(/ /g,'.').toLowerCase() + '@localhost';
 

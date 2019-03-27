@@ -91,7 +91,7 @@ body.converse-fullscreen {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     color: var(--text-color);
-    font-family: "Helvetica", "Arial", sans-serif;
+    font-family: var(--normal-font);
     font-size: var(--font-size);
     direction: ltr;
     z-index: 1031; // One more than bootstrap navbar
@@ -504,10 +504,11 @@ body.converse-fullscreen {
 
     .badge {
         text-shadow: none;
+        color: white;
     }
 
-    .badge {
-        color: white;
+    .badge-light {
+        color: var(--text-color);
     }
 
     .btn-primary, .button-primary, .badge-primary {
@@ -576,15 +577,6 @@ body.converse-fullscreen {
             border-color: var(--danger-color-dark);
         }
     }
-
-    .chat-textarea-chatbox-selected {
-        border: 1px solid #578308;
-        margin: 0;
-    }
-    .chat-textarea-chatroom-selected {
-        border: 2px solid var(--link-color);
-        margin: 0;
-    }
 }
 
 @media screen and (max-width: 575px) {
@@ -607,30 +599,30 @@ body.converse-fullscreen {
 
 
 @media screen and (min-width: 576px) {
-  #conversejs .offset-sm-2 {
-    margin-left: 16.666667%;
-  }
+    #conversejs .offset-sm-2 {
+        margin-left: 16.666667%;
+    }
 }
 @media screen and (min-width: 768px) {
-  #conversejs .offset-md-2 {
-    margin-left: 16.666667%;
-  }
-  #conversejs .offset-md-3 {
-    margin-left: 25%;
-  }
+    #conversejs .offset-md-2 {
+        margin-left: 16.666667%;
+    }
+    #conversejs .offset-md-3 {
+        margin-left: 25%;
+    }
 }
 @media screen and (min-width: 992px) {
-  #conversejs .offset-lg-2 {
-    margin-left: 16.666667%;
-  }
-  #conversejs .offset-lg-3 {
-    margin-left: 25%;
-  }
+    #conversejs .offset-lg-2 {
+        margin-left: 16.666667%;
+    }
+    #conversejs .offset-lg-3 {
+        margin-left: 25%;
+    }
 }
 @media screen and (min-width: 1200px) {
-  #conversejs .offset-xl-2 {
-    margin-left: 16.666667%;
-  }
+    #conversejs .offset-xl-2 {
+        margin-left: 16.666667%;
+    }
 }
 @media screen and (max-height: 450px) {
   #conversejs {

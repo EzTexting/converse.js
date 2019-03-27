@@ -154,6 +154,13 @@ Allow users to resize chats by dragging the edges. The min-height and min-width
 CSS properties set on a chatboxes (specifically on the ``#converse.js .chatbox > .box-flyout`` element)
 will be honored, IF they are set in pixels.
 
+allow_logout
+------------
+
+* Default: ``true``
+
+Determines whether the user is allowed to log out. If set to ``false``, there will be no logout button.
+
 allow_muc
 ---------
 
@@ -215,7 +222,7 @@ allow_registration
 
 * Default:  ``true``
 
-Support for `XEP-0077: In band registration <http://xmpp.org/extensions/xep-0077.html>`_
+Support for `XEP-0077: In band registration <https://xmpp.org/extensions/xep-0077.html>`_
 
 Allow XMPP account registration showing the corresponding UI register form interface.
 
@@ -249,13 +256,18 @@ auto_list_rooms
 * Default:  ``false``
 
 If true, and the XMPP server on which the current user is logged in supports
-multi-user chat, then a list of rooms on that server will be fetched.
+multi-user chat, then a list of rooms on that server will be fetched in the
+"Query for Groupchats" modal.
 
 Not recommended for servers with lots of chatrooms.
 
 For each room on the server a query is made to fetch further details (e.g.
 features, number of occupants etc.), so on servers with many rooms this
 option will create lots of extra connection traffic.
+
+If the `muc_domain`_ is locked with the `locked_muc_domain`_ setting, then
+rooms will automatically be fetched in the "Query for Groupchats" modal,
+regardless of the value of this setting.
 
 .. _`auto_login`:
 
@@ -351,6 +363,7 @@ auto_join_on_invite
 * Default:  ``false``
 
 If true, the user will automatically join a chatroom on invite without any confirm.
+Also inviting users won't be prompted for a reason.
 
 
 auto_join_private_chats
@@ -560,7 +573,7 @@ csi_waiting_time
 
 * Default: ``0``
 
-This option adds support for `XEP-0352 Client State Indication <http://xmpp.org/extensions/xep-0352.html>_`
+This option adds support for `XEP-0352 Client State Indication <https://xmpp.org/extensions/xep-0352.html>_`
 
 If Converse is idle for the configured amount of seconds, a chat state
 indication of ``inactive`` will be sent out to the XMPP server (if the server
@@ -576,7 +589,10 @@ debug
 
 * Default:  ``false``
 
-If set to true, debugging output will be logged to the browser console.
+If set to ``true``, debugging output will be logged to the browser console.
+
+You can also set this value by changing the URL fragment to `#converse?debug=true` or `#converse?debug=false`.
+
 
 default_domain
 --------------
@@ -791,7 +807,7 @@ See also:
     Currently the "keepalive" setting only works with BOSH and not with
     websockets. This is because XMPP over websocket does not use the same
     session token as with BOSH. A possible solution for this is to implement
-    `XEP-0198 <http://xmpp.org/extensions/xep-0198.html>`_, specifically
+    `XEP-0198 <https://xmpp.org/extensions/xep-0198.html>`_, specifically
     with regards to "stream resumption".
 
 .. _`locales`:
@@ -861,6 +877,35 @@ For example, if ``locked_domain`` is set to ``example.org``, then the user
 
 Additionally, only users registered on the ``example.org`` host can log in, no
 other users are allowed to log in.
+
+locked_muc_domain
+-----------------
+
+* Default: ``false``
+* Allowed values: ``false``, ``true``, ``'hidden'``
+
+By setting this value to something truthy, you restrict the multi-user chat (MUC) domain to only the value
+specified in `muc_domain`_.
+
+If the value is set to `'hidden'` (which is also truthy), then the MUC domain
+will not be shown to users.
+
+locked_muc_nickname
+-------------------
+
+* Default: ``false``
+
+This setting allows you to restrict the multi-user chat (MUC) nickname that a
+user uses to a particular value.
+
+Where the nickname value comes from depends on other settings.
+
+The `nickname`_ configuration setting takes precedence ahead of any other
+nickname value. If that's not set, then the "nickname" value from the user's
+VCard is taken, and if that is not set but `muc_nickname_from_jid`_ is set to
+``true``, then the node of the user's JID (the part before the ``@``) is used.
+
+If no nickame value is found, then an error will be raised.
 
 message_archiving
 -----------------
@@ -934,11 +979,16 @@ muc_domain
 
 * Default:  ``undefined``
 
-The MUC (multi-user chat) domain that should be used. By default Converse
-will attempt to get the MUC domain from the XMPP host of the currently logged in
-user.
+The default MUC (multi-user chat) domain that should be used.
 
-This setting will override that.
+When setting this value, users can only enter the name when opening a new MUC,
+and don't have to add the whole address (i.e. including the domain part).
+
+Users can however still enter the domain and they can still open MUCs with
+other domains.
+
+If you want to restrict MUCs to only this domain, then set `locked_domain`_ to
+``true``.
 
 muc_history_max_stanzas
 -----------------------
@@ -964,7 +1014,7 @@ muc_instant_rooms
 
 Determines whether 'instant' (also called 'dynamic' in OpenFire) rooms are created.
 Otherwise rooms first have to be configured before they're available to other
-users (so-called "registered rooms" in `MUC-0045 <http://xmpp.org/extensions/xep-0045.html#createroom>`_).
+users (so-called "registered rooms" in `MUC-0045 <https://xmpp.org/extensions/xep-0045.html#createroom>`_).
 
 From a UX perspective, if this settings is `false`, then a configuration form will
 render, that has to be filled in first, before the room can be joined by other
@@ -985,6 +1035,16 @@ automatically be "john". If now john@differentdomain.com tries to join the
 room, his nickname will be "john-2", and if john@somethingelse.com joins, then
 his nickname will be "john-3", and so forth.
 
+muc_respect_autojoin
+--------------------
+
+* Default; ``true``
+
+Determines whether Converse will respect the autojoin-attribute of bookmarks. Per default
+all MUCs with set autojoin flag in their respective bookmarks will be joined on
+startup of Converse. When set to ``false`` no MUCs are automatically joined based on
+their bookmarks.
+
 muc_show_join_leave
 -------------------
 
@@ -1001,6 +1061,10 @@ nickname
 This setting allows you to specify the nickname for the current user.
 The nickname will be included in presence requests to other users and will also
 be used as the default nickname when entering MUC chatrooms.
+
+This value will have first preference ahead of other nickname sources, such as
+the VCard `nickname` value.
+
 
 notify_all_room_messages
 ------------------------
@@ -1245,6 +1309,14 @@ show_chatstate_notifications
 
 Specifies whether chat state (online, dnd, away) HTML5 desktop notifications should be shown.
 
+show_client_info
+----------------
+
+* Default:  ``true``
+
+Specifies whether the info icon is shown on the controlbox which when clicked opens an
+"About" modal with more information about the version of Converse being used.
+
 show_controlbox_by_default
 --------------------------
 
@@ -1468,6 +1540,7 @@ visible_toolbar_buttons
 
     {
         call: false,
+        spoiler: false,
         emoji: true,
         toggle_occupants: true
     }
@@ -1487,6 +1560,8 @@ Allows you to show or hide buttons on the chatboxes' toolbars.
         });
 * *emoji*:
     Enables rendering of emoji and provides a toolbar button for choosing them.
+* *spoiler*:
+    Shows a button for showing`XEP-0382 <https://xmpp.org/extensions/xep-0382.html>`_ spoiler messages.
 * *toggle_occupants*:
     Shows a button for toggling (i.e. showing/hiding) the list of occupants in a chatroom.
 
@@ -1566,7 +1641,7 @@ The ``view_mode`` setting configures Converse's mode and resulting behavior.
     longer exist. Instead the standard ``converse.js`` build is used, together with
     the appropriate ``view_mode`` value.
 
-    Since verseion 4.0.0, there is now also only one CSS file to be used for all
+    Since version 4.0.0, there is now also only one CSS file to be used for all
     the different view modes, ``converse.css``.
 
     The ``converse-muc-embedded.js`` build can still be built, because it's smaller

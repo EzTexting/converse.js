@@ -1,12 +1,12 @@
 // Converse.js
-// http://conversejs.org
+// https://conversejs.org
 //
-// Copyright (c) 2013-2018, the Converse.js developers
+// Copyright (c) 2013-2019, the Converse.js developers
 // Licensed under the Mozilla Public License (MPLv2)
 
 import converse from "@converse/headless/converse-core";
 
-const { Backbone, Promise, Strophe, $iq, $pres, b64_sha1, moment, sizzle, _ } = converse.env;
+const { Backbone, Promise, Strophe, $iq, $pres, moment, sizzle, _ } = converse.env;
 const u = converse.env.utils;
 
 
@@ -52,17 +52,17 @@ converse.plugins.add('converse-roster', {
             const storage = _converse.config.get('storage');
             _converse.roster = new _converse.RosterContacts();
             _converse.roster.browserStorage = new Backbone.BrowserStorage[storage](
-                b64_sha1(`converse.contacts-${_converse.bare_jid}`));
+                `converse.contacts-${_converse.bare_jid}`);
 
             _converse.roster.data = new Backbone.Model();
-            const id = b64_sha1(`converse-roster-model-${_converse.bare_jid}`);
+            const id = `converse-roster-model-${_converse.bare_jid}`;
             _converse.roster.data.id = id;
             _converse.roster.data.browserStorage = new Backbone.BrowserStorage[storage](id);
             _converse.roster.data.fetch();
 
             _converse.rostergroups = new _converse.RosterGroups();
             _converse.rostergroups.browserStorage = new Backbone.BrowserStorage[storage](
-                b64_sha1(`converse.roster.groups${_converse.bare_jid}`));
+                `converse.roster.groups${_converse.bare_jid}`);
             _converse.emit('rosterInitialized');
         };
 
@@ -88,10 +88,9 @@ converse.plugins.add('converse-roster', {
                 }
             } else {
                 try {
-                    await _converse.rostergroups.fetchRosterGroups().then(() => {
-                        _converse.emit('rosterGroupsFetched');
-                        return _converse.roster.fetchRosterContacts();
-                    });
+                    await _converse.rostergroups.fetchRosterGroups();
+                    _converse.emit('rosterGroupsFetched');
+                    await _converse.roster.fetchRosterContacts();
                     _converse.emit('rosterContactsFetched');
                 } catch (reason) {
                     _converse.log(reason, Strophe.LogLevel.ERROR);
@@ -246,16 +245,16 @@ converse.plugins.add('converse-roster', {
 
             subscribe (message) {
                 /* Send a presence subscription request to this roster contact
-                *
-                * Parameters:
-                *    (String) message - An optional message to explain the
-                *      reason for the subscription request.
-                */
+                 *
+                 * Parameters:
+                 *    (String) message - An optional message to explain the
+                 *      reason for the subscription request.
+                 */
                 const pres = $pres({to: this.get('jid'), type: "subscribe"});
                 if (message && message !== "") {
                     pres.c("status").t(message).up();
                 }
-                const nick = _converse.xmppstatus.vcard.get('nickname') || _converse.xmppstatus.vcard.get('fullname');
+                const nick = _converse.nickname || _converse.xmppstatus.vcard.get('nickname') || _converse.xmppstatus.vcard.get('fullname');
                 if (nick) {
                     pres.c('nick', {'xmlns': Strophe.NS.NICK}).t(nick).up();
                 }
@@ -266,10 +265,10 @@ converse.plugins.add('converse-roster', {
 
             ackSubscribe () {
                 /* Upon receiving the presence stanza of type "subscribed",
-                * the user SHOULD acknowledge receipt of that subscription
-                * state notification by sending a presence stanza of type
-                * "subscribe" to the contact
-                */
+                 * the user SHOULD acknowledge receipt of that subscription
+                 * state notification by sending a presence stanza of type
+                 * "subscribe" to the contact
+                 */
                 _converse.api.send($pres({
                     'type': 'subscribe',
                     'to': this.get('jid')
@@ -292,9 +291,9 @@ converse.plugins.add('converse-roster', {
 
             unauthorize (message) {
                 /* Unauthorize this contact's presence subscription
-                * Parameters:
-                *   (String) message - Optional message to send to the person being unauthorized
-                */
+                 * Parameters:
+                 *   (String) message - Optional message to send to the person being unauthorized
+                 */
                 _converse.rejectPresenceSubscription(this.get('jid'), message);
                 return this;
             },
@@ -403,7 +402,7 @@ converse.plugins.add('converse-roster', {
                 if (collection.length === 0 ||
                         (this.rosterVersioningSupported() && !_converse.session.get('roster_fetched'))) {
                     _converse.send_initial_presence = true;
-                    _converse.roster.fetchFromServer();
+                    return _converse.roster.fetchFromServer();
                 } else {
                     _converse.emit('cachedRoster', collection);
                 }
@@ -628,6 +627,7 @@ converse.plugins.add('converse-roster', {
                     contact.save({
                         'subscription': subscription,
                         'ask': ask,
+                        'nickname': item.getAttribute("name"),
                         'requesting': null,
                         'groups': groups
                     });
@@ -776,12 +776,13 @@ converse.plugins.add('converse-roster', {
                 * Returns a promise which resolves once the groups have been
                 * returned.
                 */
-                return new Promise((resolve, reject) => {
+                return new Promise(success => {
                     this.fetch({
-                        silent: true, // We need to first have all groups before
-                                    // we can start positioning them, so we set
-                                    // 'silent' to true.
-                        success: resolve
+                        success,
+                        // We need to first have all groups before
+                        // we can start positioning them, so we set
+                        // 'silent' to true.
+                        silent: true,
                     });
                 });
             }
@@ -853,7 +854,7 @@ converse.plugins.add('converse-roster', {
                 _converse.presences = new _converse.Presences();
             }
             _converse.presences.browserStorage =
-                new Backbone.BrowserStorage.session(b64_sha1(`converse.presences-${_converse.bare_jid}`));
+                new Backbone.BrowserStorage.session(`converse.presences-${_converse.bare_jid}`);
             _converse.presences.fetch();
             _converse.emit('presencesInitialized', reconnecting);
         });

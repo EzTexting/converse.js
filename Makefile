@@ -9,6 +9,7 @@ ESLINT		  	?= ./node_modules/.bin/eslint
 HTTPSERVE	   	?= ./node_modules/.bin/http-server
 HTTPSERVE_PORT	?= 8000
 INKSCAPE		?= inkscape
+INSTALL		?= install
 JSDOC			?=  ./node_modules/.bin/jsdoc
 LERNA			?= ./node_modules/.bin/lerna
 OXIPNG			?= oxipng
@@ -25,6 +26,7 @@ UGLIFYJS		?= node_modules/.bin/uglifyjs
 
 # Internal variables.
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) ./docs/source
+VERSION_FORMAT	= [0-9]+\.[0-9]+\.[0-9]+
 
 .PHONY: all
 all: dev dist
@@ -65,7 +67,7 @@ serve_bg: dev
 ########################################################################
 ## Translation machinery
 
-GETTEXT = xgettext --language="JavaScript" --keyword=__ --keyword=___ --from-code=UTF-8 --output=locale/converse.pot dist/converse-no-dependencies.js --package-name=Converse.js --copyright-holder="Jan-Carel Brand" --package-version=4.1.0 -c
+GETTEXT = xgettext --language="JavaScript" --keyword=__ --keyword=___ --from-code=UTF-8 --output=locale/converse.pot dist/converse-no-dependencies.js --package-name=Converse.js --copyright-holder="Jan-Carel Brand" --package-version=4.1.2 -c
 
 .PHONY: pot
 pot: dist/converse-no-dependencies-es2015.js
@@ -84,22 +86,34 @@ po2json:
 
 .PHONY: release
 release:
-	$(SED) -ri 's/_converse.VERSION_NAME = "v[0-9]+\.[0-9]+\.[0-9]+";/ _converse.VERSION_NAME = "v$(VERSION)";/' src/headless/converse-core.js
-	$(SED) -ri s/Version:\ [0-9]\+\.[0-9]\+\.[0-9]\+/Version:\ $(VERSION)/ COPYRIGHT
-	$(SED) -ri s/Project-Id-Version:\ Converse\.js\ [0-9]\+\.[0-9]\+\.[0-9]\+/Project-Id-Version:\ Converse.js\ $(VERSION)/ locale/converse.pot
-	$(SED) -ri s/\"version\":\ \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/\"version\":\ \"$(VERSION)\"/ package.json
-	$(SED) -ri s/\"version\":\ \"[0-9]\+\.[0-9]\+\.[0-9]\+\"/\"version\":\ \"$(VERSION)\"/ src/headless/package.json
-	$(SED) -ri s/--package-version=[0-9]\+\.[0-9]\+\.[0-9]\+/--package-version=$(VERSION)/ Makefile
-	$(SED) -ri s/v[0-9]\+\.[0-9]\+\.[0-9]\+\.zip/v$(VERSION)\.zip/ index.html
-	$(SED) -ri s/v[0-9]\+\.[0-9]\+\.[0-9]\+\.tar\.gz/v$(VERSION)\.tar\.gz/ index.html
-	$(SED) -ri s/version\ =\ \'[0-9]\+\.[0-9]\+\.[0-9]\+\'/version\ =\ \'$(VERSION)\'/ docs/source/conf.py
-	$(SED) -ri s/release\ =\ \'[0-9]\+\.[0-9]\+\.[0-9]\+\'/release\ =\ \'$(VERSION)\'/ docs/source/conf.py
-	$(SED) -ri "s/(Unreleased)/`date +%Y-%m-%d`/" CHANGES.md
-	$(SED) -ri "s/cdn.conversejs.org\/[0-9]+\.[0-9]+\.[0-9]+/cdn.conversejs.org\/$(VERSION)/" docs/source/quickstart.rst
+	$(SED) -i '/^_converse.VERSION_NAME =/s/=.*/= "v$(VERSION)";/' src/headless/converse-core.js
+	$(SED) -i '/Version:/s/:.*/: $(VERSION)/' COPYRIGHT
+	$(SED) -i '/Project-Id-Version:/s/:.*/: Converse.js $(VERSION)\n"/' locale/converse.pot
+	$(SED) -i '/"version":/s/:.*/: "$(VERSION)",/' package.json
+	$(SED) -i '/"version":/s/:.*/: "$(VERSION)",/' src/headless/package.json
+	$(SED) -ri 's/--package-version=$(VERSION_FORMAT)/--package-version=$(VERSION)/' Makefile
+	$(SED) -i -e "/version =/s/=.*/= '$(VERSION)'/" -e "/release =/s/=.*/= '$(VERSION)'/" docs/source/conf.py
+	$(SED) -i "s/[Uu]nreleased/`date +%Y-%m-%d`/" CHANGES.md
+	$(SED) -ri 's,cdn.conversejs.org/$(VERSION_FORMAT),cdn.conversejs.org/$(VERSION),' docs/source/quickstart.rst
 	make pot
 	make po
 	make po2json
 	make build
+	mkdir -p 'converse-assets-$(VERSION)'
+	$(INSTALL) -D dist/converse.js 'converse-assets-$(VERSION)/converse.js'
+	$(INSTALL) -D dist/converse.min.js 'converse-assets-$(VERSION)/converse.min.js'
+	$(INSTALL) -D dist/converse.min.js.map 'converse-assets-$(VERSION)/converse.min.js.map'
+	$(INSTALL) -D dist/converse-headless.js 'converse-assets-$(VERSION)/converse-headless.js'
+	$(INSTALL) -D dist/converse-headless.min.js 'converse-assets-$(VERSION)/converse-headless.min.js'
+	$(INSTALL) -D dist/converse-headless.min.js.map 'converse-assets-$(VERSION)/converse-headless.min.js.map'
+	$(INSTALL) -D css/converse.css 'converse-assets-$(VERSION)/css/converse.css'
+	$(INSTALL) -D css/converse.min.css 'converse-assets-$(VERSION)/css/converse.min.css'
+	cp -r css/webfonts 'converse-assets-$(VERSION)/css/'
+	cp -r sounds 'converse-assets-$(VERSION)/'
+	find locale -type f -name '*.json' \
+		-exec $(INSTALL) -D '{}' 'converse-assets-$(VERSION)/{}' \;
+	zip -r 'converse-assets-$(VERSION).zip' 'converse-assets-$(VERSION)'
+	rm -rf 'converse-assets-$(VERSION)'
 
 
 ########################################################################
@@ -115,11 +129,11 @@ stamp-npm: $(LERNA) package.json package-lock.json src/headless/package.json
 .PHONY: clean
 clean:
 	rm -rf node_modules stamp-npm
-	rm dist/*.min.js
-	rm css/*.min.css
-	rm css/*.map
-	rm css/*.zip
-	rm *.zip
+	rm -f dist/*.min.js*
+	rm -f css/*.min.css
+	rm -f css/*.map
+	rm -f css/*.zip
+	rm -f *.zip
 
 .PHONY: dev
 dev: stamp-npm
@@ -182,6 +196,8 @@ logo/conversejs-filled%.png:: logo/conversejs-filled.svg
 BUILDS = dist/converse.js \
 	dist/converse.min.js \
 	dist/converse-headless.js \
+	src/headless/dist/converse-headless.js \
+	src/headless/dist/converse-headless.min.js \
 	dist/converse-headless.min.js \
 	dist/converse-no-dependencies.min.js \
 	dist/converse-no-dependencies.js \
@@ -193,8 +209,12 @@ dist/converse.min.js: src webpack.config.js stamp-npm @converse/headless
 	$(NPX)  webpack --mode=production
 dist/converse-headless.js: src webpack.config.js stamp-npm @converse/headless
 	$(NPX)  webpack --mode=development --type=headless
+src/headless/dist/converse-headless.js: dist/converse-headless.js
+	cp dist/converse-headless.js src/headless/dist/converse-headless.js
 dist/converse-headless.min.js: src webpack.config.js stamp-npm @converse/headless
 	$(NPX)  webpack --mode=production --type=headless
+src/headless/dist/converse-headless.min.js: dist/converse-headless.min.js
+	cp dist/converse-headless.min.js src/headless/dist/converse-headless.min.js
 dist/converse-no-dependencies.js: src webpack.config.js stamp-npm @converse/headless
 	$(NPX)  webpack --mode=development --type=nodeps
 dist/converse-no-dependencies.min.js: src webpack.config.js stamp-npm @converse/headless
@@ -208,27 +228,21 @@ dist/converse-no-dependencies-es2015.js: src webpack.config.js stamp-npm @conver
 dist:: build
 
 .PHONY: build
-build:: dev css $(BUILDS) locale.zip css/webfonts.zip sounds.zip
-
-css/webfonts.zip: css/webfonts/*
-	zip -r css/webfonts.zip css/webfonts
-
-locale.zip:
-	zip -r locale.zip locale --exclude *.pot --exclude *.po --exclude *.po~
-
-sounds.zip:
-	zip -r sounds.zip sounds
+build:: dev css $(BUILDS)
 
 ########################################################################
 ## Tests
 
 .PHONY: eslint
 eslint: stamp-npm
-	$(ESLINT) src/
+	$(ESLINT) src/*.js
+	$(ESLINT) src/utils/*.js
+	$(ESLINT) src/headless/*.js
+	$(ESLINT) src/headless/utils/*.js
 	$(ESLINT) spec/
 
 .PHONY: check
-check: dist/converse.js eslint
+check: eslint dist/converse.js 
 	LOG_CR_VERBOSITY=INFO $(CHROMIUM) --disable-gpu --no-sandbox http://localhost:$(HTTPSERVE_PORT)/tests/index.html
 
 ########################################################################
@@ -253,4 +267,4 @@ html: dev docsdev apidoc
 
 PHONY: apidoc
 apidoc:
-	$(JSDOC) --readme docs/source/jsdoc_intro.md -c docs/source/conf.json -d docs/html/api src/*.js
+	$(JSDOC) --readme docs/source/jsdoc_intro.md -c docs/source/conf.json -d docs/html/api src/*.js src/utils/*.js src/headless/*.js src/headless/utils/*.js

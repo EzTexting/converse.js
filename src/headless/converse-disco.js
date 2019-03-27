@@ -1,7 +1,7 @@
 // Converse.js
-// http://conversejs.org
+// https://conversejs.org
 //
-// Copyright (c) 2013-2018, the Converse developers
+// Copyright (c) 2013-2019, the Converse developers
 // Licensed under the Mozilla Public License (MPLv2)
 
 /* This is a Converse plugin which add support for XEP-0030: Service Discovery */
@@ -9,7 +9,7 @@
 import converse from "./converse-core";
 import sizzle from "sizzle";
 
-const { Backbone, Promise, Strophe, $iq, b64_sha1, utils, _, f } = converse.env;
+const { Backbone, Promise, Strophe, $iq, utils, _, f } = converse.env;
 
 converse.plugins.add('converse-disco', {
 
@@ -36,30 +36,30 @@ converse.plugins.add('converse-disco', {
 
                 this.dataforms = new Backbone.Collection();
                 this.dataforms.browserStorage = new Backbone.BrowserStorage.session(
-                    b64_sha1(`converse.dataforms-${this.get('jid')}`)
+                    `converse.dataforms-${this.get('jid')}`
                 );
 
                 this.features = new Backbone.Collection();
                 this.features.browserStorage = new Backbone.BrowserStorage.session(
-                    b64_sha1(`converse.features-${this.get('jid')}`)
+                    `converse.features-${this.get('jid')}`
                 );
                 this.features.on('add', this.onFeatureAdded, this);
 
                 this.fields = new Backbone.Collection();
                 this.fields.browserStorage = new Backbone.BrowserStorage.session(
-                    b64_sha1(`converse.fields-${this.get('jid')}`)
+                    `converse.fields-${this.get('jid')}`
                 );
                 this.fields.on('add', this.onFieldAdded, this);
 
                 this.identities = new Backbone.Collection();
                 this.identities.browserStorage = new Backbone.BrowserStorage.session(
-                    b64_sha1(`converse.identities-${this.get('jid')}`)
+                    `converse.identities-${this.get('jid')}`
                 );
                 this.fetchFeatures();
 
                 this.items = new _converse.DiscoEntities();
                 this.items.browserStorage = new Backbone.BrowserStorage.session(
-                    b64_sha1(`converse.disco-items-${this.get('jid')}`)
+                    `converse.disco-items-${this.get('jid')}`
                 );
                 this.items.fetch();
             },
@@ -79,26 +79,17 @@ converse.plugins.add('converse-disco', {
                 });
             },
 
-            hasFeature (feature) {
+            async hasFeature (feature) {
                 /* Returns a Promise which resolves with a map indicating
                  * whether a given feature is supported.
                  *
                  * Parameters:
                  *    (String) feature - The feature that might be supported.
                  */
-                const entity = this;
-                return new Promise((resolve, reject) => {
-                    function fulfillPromise () {
-                        if (entity.features.findWhere({'var': feature})) {
-                            resolve(entity);
-                        } else {
-                            resolve();
-                        }
-                    }
-                    entity.waitUntilFeaturesDiscovered
-                        .then(fulfillPromise)
-                        .catch(_.partial(_converse.log, _, Strophe.LogLevel.FATAL));
-                });
+                await this.waitUntilFeaturesDiscovered
+                if (this.features.findWhere({'var': feature})) {
+                    return this;
+                }
             },
 
             onFeatureAdded (feature) {
@@ -130,8 +121,8 @@ converse.plugins.add('converse-disco', {
                 try {
                     const stanza = await _converse.api.disco.info(this.get('jid'), null);
                     this.onInfo(stanza);
-                } catch (iq) {
-                    this.waitUntilFeaturesDiscovered.reject(iq);
+                } catch(iq) {
+                    this.waitUntilFeaturesDiscovered.resolve(this);
                     _converse.log(iq, Strophe.LogLevel.ERROR);
                 }
             },
@@ -226,7 +217,7 @@ converse.plugins.add('converse-disco', {
         });
 
         function addClientFeatures () {
-            // See http://xmpp.org/registrar/disco-categories.html
+            // See https://xmpp.org/registrar/disco-categories.html
             _converse.api.disco.own.identities.add('client', 'web', 'Converse');
 
             _converse.api.disco.own.features.add(Strophe.NS.BOSH);
@@ -243,7 +234,7 @@ converse.plugins.add('converse-disco', {
         function initStreamFeatures () {
             _converse.stream_features = new Backbone.Collection();
             _converse.stream_features.browserStorage = new Backbone.BrowserStorage.session(
-                b64_sha1(`converse.stream-features-${_converse.bare_jid}`)
+                `converse.stream-features-${_converse.bare_jid}`
             );
             _converse.stream_features.fetch({
                 success (collection) {
@@ -268,7 +259,7 @@ converse.plugins.add('converse-disco', {
 
             _converse.disco_entities = new _converse.DiscoEntities();
             _converse.disco_entities.browserStorage = new Backbone.BrowserStorage.session(
-                b64_sha1(`converse.disco-entities-${_converse.bare_jid}`)
+                `converse.disco-entities-${_converse.bare_jid}`
             );
 
             const collection = await _converse.disco_entities.fetchEntities();

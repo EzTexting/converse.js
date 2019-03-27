@@ -1,7 +1,7 @@
 // Converse.js
-// http://conversejs.org
+// https://conversejs.org
 //
-// Copyright (c) 2013-2018, the Converse.js developers
+// Copyright (c) 2013-2019, the Converse.js developers
 // Licensed under the Mozilla Public License (MPLv2)
 
 /* global libsignal, ArrayBuffer, parseInt, crypto */
@@ -9,7 +9,7 @@
 import converse from "@converse/headless/converse-core";
 import tpl_toolbar_omemo from "templates/toolbar_omemo.html";
 
-const { Backbone, Promise, Strophe, moment, sizzle, $build, $iq, $msg, _, f, b64_sha1 } = converse.env;
+const { Backbone, Promise, Strophe, moment, sizzle, $build, $iq, $msg, _, f } = converse.env;
 const u = converse.env.utils;
 
 Strophe.addNamespace('OMEMO_DEVICELIST', Strophe.NS.OMEMO+".devicelist");
@@ -67,7 +67,7 @@ function parseBundle (bundle_el) {
 converse.plugins.add('converse-omemo', {
 
     enabled (_converse) {
-        return !_.isNil(window.libsignal) && !f.includes('converse-omemo', _converse.blacklisted_plugins);
+        return !_.isNil(window.libsignal) && !f.includes('converse-omemo', _converse.blacklisted_plugins) && _converse.config.get('trusted');
     },
 
     dependencies: ["converse-chatview", "converse-pubsub"],
@@ -343,17 +343,16 @@ converse.plugins.add('converse-omemo', {
                 }
             },
 
-            async sendMessage (attrs) {
-                const { _converse } = this.__super__,
-                      { __ } = _converse;
-
-                if (this.get('omemo_active') && attrs.message) {
+            async sendMessage (text, spoiler_hint) {
+                if (this.get('omemo_active') && text) {
+                    const { _converse } = this.__super__;
+                    const attrs = this.getOutgoingMessageAttributes(text, spoiler_hint);
                     attrs['is_encrypted'] = true;
                     attrs['plaintext'] = attrs.message;
                     try {
                         const devices = await _converse.getBundlesAndBuildSessions(this);
                         const stanza = await _converse.createOMEMOMessageStanza(this, this.messages.create(attrs), devices);
-                        this.sendMessageStanza(stanza);
+                        _converse.api.send(stanza);
                     } catch (e) {
                         this.handleMessageSendError(e);
                         return false;

@@ -12,6 +12,17 @@
         }
     }
 
+    #list-chatrooms-modal {
+        .modal-body {
+			max-height: 70vh;
+            padding-bottom: 0; // When the list of chats overflows, we don't want bottom padding
+        }
+        .available-chatrooms {
+            overflow: auto;
+            padding-bottom: 1rem;
+        }
+    }
+
     #room-details-modal {
         .features-list {
             margin-left: 1em;
@@ -174,6 +185,8 @@
                     }
                     .occupants-heading {
                         font-family: var(--heading-font);
+                        margin-bottom: 0.5em;
+                        padding-left: 0;
                     }
                     .chatroom-features {
                         display: var(--occupants-features-display);
@@ -305,6 +318,9 @@
                 }
             }
             .chat-textarea {
+                &:active, &:focus{
+                    outline-color: var(--chatroom-head-color);
+                }
                 border-bottom-right-radius: 0;
                 &.correcting {
                     background-color: var(--chatroom-correcting-color);
@@ -354,6 +370,9 @@
                 .occupants {
                     .occupants-heading {
                         padding: 0;
+                    }
+                    .occupant-list {
+                        border-bottom: none;
                     }
                     .chatroom-features {
                         .feature {
@@ -475,6 +494,20 @@
             span {
                 .invited-contact {
                     margin: 0 0 0.5em -1px;
+                }
+            }
+        }
+    }
+}
+
+@include media-breakpoint-up(md) {
+    .chatroom {
+        .box-flyout {
+            .occupants {
+                .occupants-header {
+                    .hide-occupants {
+                        display: none;
+                    }
                 }
             }
         }

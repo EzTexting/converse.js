@@ -1,15 +1,14 @@
 // Converse.js
-// http://conversejs.org
+// https://conversejs.org
 //
-// Copyright (c) 2013-2018, the Converse.js developers
+// Copyright (c) 2013-2019, the Converse.js developers
 // Licensed under the Mozilla Public License (MPLv2)
+//
+// XEP-0045 Multi-User Chat
 
 import "./converse-disco";
 import "./utils/emoji";
 import "./utils/muc";
-import "backbone.overview/backbone.orderedlistview";
-import "backbone.overview/backbone.overview";
-import "backbone.vdomview";
 import converse from "./converse-core";
 import u from "./utils/form";
 
@@ -118,7 +117,6 @@ converse.plugins.add('converse-muc', {
             auto_join_on_invite: false,
             auto_join_rooms: [],
             auto_register_muc_nickname: false,
-            muc_domain: undefined,
             muc_history_max_stanzas: undefined,
             muc_instant_rooms: true,
             muc_nickname_from_jid: false
@@ -141,6 +139,21 @@ converse.plugins.add('converse-muc', {
         }
         _converse.router.route('converse/room?jid=:jid', openRoom);
 
+
+        _converse.getDefaultMUCNickname = function () {
+            // XXX: if anything changes here, update the docs for the
+            // locked_muc_nickname setting.
+            if (!_converse.xmppstatus) {
+                throw new Error(
+                    "Can't call _converse.getDefaultMUCNickname before the statusInitialized has been fired.");
+            }
+            const nick = _converse.nickname || _converse.xmppstatus.vcard.get('nickname');
+            if (nick) {
+                return nick;
+            } else if (_converse.muc_nickname_from_jid) {
+                return Strophe.unescapeNode(Strophe.getNodeFromJid(_converse.bare_jid));
+            }
+        }
 
         _converse.openChatRoom = function (jid, settings, bring_to_foreground) {
             /* Opens a groupchat, making sure that certain attributes
@@ -196,7 +209,7 @@ converse.plugins.add('converse-muc', {
 
                 this.occupants = new _converse.ChatRoomOccupants();
                 this.occupants.browserStorage = new Backbone.BrowserStorage.session(
-                    b64_sha1(`converse.occupants-${_converse.bare_jid}${this.get('jid')}`)
+                    `converse.occupants-${_converse.bare_jid}${this.get('jid')}`
                 );
                 this.occupants.chatroom  = this;
                 this.registerHandlers();
@@ -293,7 +306,7 @@ converse.plugins.add('converse-muc', {
                     'from': _converse.connection.jid,
                     'to': this.getRoomJIDAndNick(nick)
                 }).c("x", {'xmlns': Strophe.NS.MUC})
-                  .c("history", {'maxstanzas': this.get('mam_enabled') ? 0 : _converse.muc_history_max_stanzas}).up();
+                  .c("history", {'maxstanzas': this.features.get('mam_enabled') ? 0 : _converse.muc_history_max_stanzas}).up();
                 if (password) {
                     stanza.cnode(Strophe.xmlElement("password", [], password));
                 }
@@ -370,9 +383,7 @@ converse.plugins.add('converse-muc', {
 
             extractReference (text, index) {
                 for (let i=index; i<text.length; i++) {
-                    if (text[i] !== '@') {
-                        continue
-                    } else {
+                    if (text[i] === '@' && (i === 0 || text[i - 1] === ' ')) {
                         const match = text.slice(i+1),
                               ref = this.getReferenceForMention(match, i);
                         if (ref) {
@@ -403,10 +414,14 @@ converse.plugins.add('converse-muc', {
                 const is_spoiler = this.get('composing_spoiler');
                 var references;
                 [text, references] = this.parseTextForReferences(text);
+                const origin_id = _converse.connection.getUniqueId();
 
                 return {
+                    'msgid': origin_id,
+                    'origin_id': origin_id,
                     'from': `${this.get('jid')}/${this.get('nick')}`,
                     'fullname': this.get('nick'),
+                    'is_single_emoji': text ? u.isSingleEmoji(text) : false,
                     'is_spoiler': is_spoiler,
                     'message': text ? u.httpToGeoUri(u.shortnameToUnicode(text), _converse) : undefined,
                     'nick': this.get('nick'),
@@ -538,7 +553,7 @@ converse.plugins.add('converse-muc', {
                 /* Send an IQ stanza to the server, asking it for the
                  * member-list of this groupchat.
                  *
-                 * See: http://xmpp.org/extensions/xep-0045.html#modifymember
+                 * See: https://xmpp.org/extensions/xep-0045.html#modifymember
                  *
                  * Parameters:
                  *  (String) affiliation: The specific member list to
@@ -559,7 +574,7 @@ converse.plugins.add('converse-muc', {
                 /* Send IQ stanzas to the server to set an affiliation for
                  * the provided JIDs.
                  *
-                 * See: http://xmpp.org/extensions/xep-0045.html#modifymember
+                 * See: https://xmpp.org/extensions/xep-0045.html#modifymember
                  *
                  * XXX: Prosody doesn't accept multiple JIDs' affiliations
                  * being set in one IQ stanza, so as a workaround we send
@@ -728,7 +743,7 @@ converse.plugins.add('converse-muc', {
                 /* Send IQ stanzas to the server to modify the
                  * affiliations in this groupchat.
                  *
-                 * See: http://xmpp.org/extensions/xep-0045.html#modifymember
+                 * See: https://xmpp.org/extensions/xep-0045.html#modifymember
                  *
                  * Parameters:
                  *  (Object) members: A map of jids, affiliations and optionally reasons
@@ -778,20 +793,6 @@ converse.plugins.add('converse-muc', {
                     .then(old_members => this.setAffiliations(deltaFunc(members, old_members)))
                     .then(() => this.occupants.fetchMembers())
                     .catch(_.partial(_converse.log, _, Strophe.LogLevel.ERROR));
-            },
-
-            getDefaultNick () {
-                /* The default nickname (used when muc_nickname_from_jid is true)
-                 * is the node part of the user's JID.
-                 * We put this in a separate method so that it can be
-                 * overridden by plugins.
-                 */
-                const nick = _converse.xmppstatus.vcard.get('nickname');
-                if (nick) {
-                    return nick;
-                } else if (_converse.muc_nickname_from_jid) {
-                    return Strophe.unescapeNode(Strophe.getNodeFromJid(_converse.bare_jid));
-                }
             },
 
             async checkForReservedNick () {
@@ -947,22 +948,6 @@ converse.plugins.add('converse-muc', {
                 return data;
             },
 
-            isDuplicate (message, original_stanza) {
-                // XXX: original_stanza is not used here, but in converse-mam
-                const msgid = message.getAttribute('id'),
-                      jid = message.getAttribute('from');
-
-                if (msgid) {
-                    const msg = this.messages.findWhere({'msgid': msgid, 'from': jid});
-                    if (msg && msg.get('sender') === 'me' && !msg.get('received')) {
-                        msg.save({'received': moment().format()});
-                    }
-                    return msg;
-                }
-                return false;
-
-            },
-
             fetchFeaturesIfConfigurationChanged (stanza) {
                 const configuration_changed = stanza.querySelector("status[code='104']"),
                       logging_enabled = stanza.querySelector("status[code='170']"),
@@ -975,6 +960,66 @@ converse.plugins.add('converse-muc', {
                         room_no_longer_anon || room_now_semi_anon || room_now_fully_anon) {
                     this.refreshRoomFeatures();
                 }
+            },
+
+            isReceipt (stanza) {
+                return sizzle(`received[xmlns="${Strophe.NS.RECEIPTS}"]`, stanza).length > 0;
+            },
+
+            isChatMarker (stanza) {
+                return sizzle(
+                    `received[xmlns="${Strophe.NS.MARKERS}"],
+                     displayed[xmlns="${Strophe.NS.MARKERS}"],
+                     acknowledged[xmlns="${Strophe.NS.MARKERS}"]`, stanza).length > 0;
+            },
+
+            subjectChangeHandled (attrs) {
+                /* Handle a subject change and return `true` if so.
+                 *
+                 * Parameters:
+                 *  (Object) attrs: The message attributes
+                 */
+                if (attrs.subject && !attrs.thread && !attrs.message) {
+                    // https://xmpp.org/extensions/xep-0045.html#subject-mod
+                    // -----------------------------------------------------
+                    // The subject is changed by sending a message of type "groupchat" to the <room@service>,
+                    // where the <message/> MUST contain a <subject/> element that specifies the new subject but
+                    // MUST NOT contain a <body/> element (or a <thread/> element).
+                    u.safeSave(this, {'subject': {'author': attrs.nick, 'text': attrs.subject || ''}});
+                    return true;
+                }
+                return false;
+            },
+
+            ignorableCSN (attrs) {
+                /* Is this a chat state notification that can be ignored,
+                 * because it's old or because it's from us.
+                 *
+                 * Parameters:
+                 *  (Object) attrs: The message attributes
+                 */
+                const is_csn = u.isOnlyChatStateNotification(attrs),
+                        own_message = Strophe.getResourceFromJid(attrs.from) == this.get('nick');
+                return is_csn && (attrs.is_delayed || own_message);
+            },
+
+            getUpdatedMessageAttributes (message, stanza) {
+                // Overridden in converse-muc and converse-mam
+                const attrs = _converse.ChatBox.prototype.getUpdatedMessageAttributes.call(this, message, stanza);
+                const from = stanza.getAttribute('from');
+                const own_message = Strophe.getResourceFromJid(from) == this.get('nick');
+                if (own_message) {
+                    const stanza_id = sizzle(`stanza-id[xmlns="${Strophe.NS.SID}"]`, stanza).pop();
+                    const by_jid = stanza_id ? stanza_id.getAttribute('by') : undefined;
+                    if (by_jid) {
+                        const key = `stanza_id ${by_jid}`;
+                        attrs[key] = stanza_id.getAttribute('id');
+                    }
+                    if (!message.get('received')) {
+                        attrs.received = moment().format();
+                    }
+                }
+                return attrs;
             },
 
             async onMessage (stanza) {
@@ -990,40 +1035,29 @@ converse.plugins.add('converse-muc', {
                 if (forwarded) {
                     stanza = forwarded.querySelector('message');
                 }
-                if (this.isDuplicate(stanza, original_stanza)) {
-                    return;
+                const message = await this.getDuplicateMessage(original_stanza);
+                if (message) {
+                    this.updateMessage(message, original_stanza);
+                }
+                if (message ||
+                        this.handleMessageCorrection(stanza) ||
+                        this.isReceipt(stanza) ||
+                        this.isChatMarker(stanza)) {
+                    return _converse.emit('message', {'stanza': original_stanza});
                 }
                 const attrs = await this.getMessageAttributesFromStanza(stanza, original_stanza);
-                if (!attrs.nick) {
-                    return;
-                }
-                if (!this.handleMessageCorrection(stanza)) {
-                    if (attrs.subject && !attrs.thread && !attrs.message) {
-                        // https://xmpp.org/extensions/xep-0045.html#subject-mod
-                        // -----------------------------------------------------
-                        // The subject is changed by sending a message of type "groupchat" to the <room@service>,
-                        // where the <message/> MUST contain a <subject/> element that specifies the new subject but
-                        // MUST NOT contain a <body/> element (or a <thread/> element).
-                        u.safeSave(this, {'subject': {'author': attrs.nick, 'text': attrs.subject || ''}});
-                        return;
-                    }
+                if (attrs.nick &&
+                        !this.subjectChangeHandled(attrs) &&
+                        !this.ignorableCSN(attrs) &&
+                        (attrs['chat_state'] || !u.isEmptyMessage(attrs))) {
 
-                    const is_csn = u.isOnlyChatStateNotification(attrs),
-                          own_message = Strophe.getResourceFromJid(attrs.from) == this.get('nick');
-                    if (is_csn && (attrs.is_delayed || own_message)) {
-                        // No need showing delayed or our own CSN messages
-                        return;
-                    }
-                    const msg = await this.messages.create(attrs);
+                    const msg = this.messages.create(attrs);
+                    this.incrementUnreadMsgCounter(msg);
                     if (forwarded && msg && msg.get('sender')  === 'me') {
                         msg.save({'received': moment().format()});
                     }
-                    this.incrementUnreadMsgCounter(msg);
                 }
-                if (attrs.nick !== this.get('nick')) {
-                    // We only emit an event if it's not our own message
-                    _converse.emit('message', {'stanza': original_stanza, 'chatbox': this});
-                }
+                _converse.emit('message', {'stanza': original_stanza, 'chatbox': this});
             },
 
             onPresence (pres) {
@@ -1244,9 +1278,12 @@ converse.plugins.add('converse-muc', {
 
 
         _converse.RoomsPanelModel = Backbone.Model.extend({
-            defaults: {
-                'muc_domain': '',
-            },
+            defaults: function () {
+                return {
+                    'muc_domain': '',
+                    'nick': _converse.getDefaultMUCNickname()
+                }
+            }
         });
 
 
@@ -1283,11 +1320,15 @@ converse.plugins.add('converse-muc', {
                 }
             }
             if (result === true) {
-                const chatroom = _converse.openChatRoom(
-                    room_jid, {'password': x_el.getAttribute('password') });
+                const chatroom = _converse.openChatRoom(room_jid, {'password': x_el.getAttribute('password') });
 
                 if (chatroom.get('connection_status') === converse.ROOMSTATUS.DISCONNECTED) {
-                    _converse.chatboxviews.get(room_jid).join();
+                    // XXX: Leaky abstraction from views here
+                    if (_converse.chatboxviews) {
+                        _converse.chatboxviews.get(room_jid).join();
+                    } else {
+                        _converse.chatboxes.get(room_jid).join();
+                    }
                 }
             }
         };
@@ -1414,8 +1455,7 @@ converse.plugins.add('converse-muc', {
                  * Creates a new MUC chatroom (aka groupchat)
                  *
                  * Similar to {@link _converse.api.rooms.open}, but creates
-                 * the chatroom in the background (i.e. doesn't cause a
-                 * view to open).
+                 * the chatroom in the background (i.e. doesn't cause a view to open).
                  *
                  * @method _converse.api.rooms.create
                  * @param {(string[]|string)} jid|jids The JID or array of
@@ -1459,7 +1499,7 @@ converse.plugins.add('converse-muc', {
                  *     configured automatically. Currently it doesn't make sense to specify
                  *     `roomconfig` values if `auto_configure` is set to `false`.
                  *     For a list of configuration values that can be passed in, refer to these values
-                 *     in the [XEP-0045 MUC specification](http://xmpp.org/extensions/xep-0045.html#registrar-formtype-owner).
+                 *     in the [XEP-0045 MUC specification](https://xmpp.org/extensions/xep-0045.html#registrar-formtype-owner).
                  *     The values should be named without the `muc#roomconfig_` prefix.
                  * @param {boolean} [attrs.maximize] A boolean, indicating whether minimized rooms should also be
                  *     maximized, when opened. Set to `false` by default.

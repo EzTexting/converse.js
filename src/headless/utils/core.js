@@ -1,9 +1,9 @@
 // Converse.js (A browser based XMPP chat client)
-// http://conversejs.org
+// https://conversejs.org
 //
 // This is the utilities module.
 //
-// Copyright (c) 2013-2018, Jan-Carel Brand <jc@opkode.com>
+// Copyright (c) 2013-2019, Jan-Carel Brand <jc@opkode.com>
 // Licensed under the Mozilla Public License (MPLv2)
 //
 /*global escape, Uint8Array */
@@ -15,6 +15,10 @@ import _ from "../lodash.noconflict";
 import sizzle from "sizzle";
 
 const u = {};
+
+u.toStanza = function (string) {
+    return Strophe.xmlHtmlNode(string).firstElementChild;
+}
 
 u.getLongestSubstring = function (string, candidates) {
     function reducer (accumulator, current_value) {
@@ -328,9 +332,11 @@ u.siblingIndex = function (el) {
     return i;
 };
 
-u.getCurrentWord = function (input) {
-    const cursor = input.selectionEnd || undefined;
-    return _.last(input.value.slice(0, cursor).split(' '));
+u.getCurrentWord = function (input, index) {
+    if (!index) {
+        index = input.selectionEnd || undefined;
+    }
+    return _.last(input.value.slice(0, index).split(' '));
 };
 
 u.replaceCurrentWord = function (input, new_value) {

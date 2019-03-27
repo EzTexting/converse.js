@@ -1,7 +1,7 @@
 // Converse.js
-// http://conversejs.org
+// https://conversejs.org
 //
-// Copyright (c) 2012-2018, the Converse.js developers
+// Copyright (c) 2012-2019, the Converse.js developers
 // Licensed under the Mozilla Public License (MPLv2)
 
 import "./utils/emoji";
@@ -36,7 +36,6 @@ converse.plugins.add('converse-chatboxes', {
         _converse.api.settings.update({
             'auto_join_private_chats': [],
             'filter_by_resource': false,
-            'forward_messages': false,
             'send_chat_state_notifications': true
         });
         _converse.api.promises.add([
@@ -220,16 +219,23 @@ converse.plugins.add('converse-chatboxes', {
         });
 
 
+        /**
+         * The "_converse.ChatBox" namespace
+         *
+         * @namespace _converse.ChatBox
+         * @memberOf _converse
+         */
         _converse.ChatBox = Backbone.Model.extend({
             defaults () {
                 return {
                     'bookmarked': false,
                     'chat_state': undefined,
+                    'hidden': _.includes(['mobile', 'fullscreen'], _converse.view_mode),
+                    'message_type': 'chat',
+                    'nickname': undefined,
                     'num_unread': 0,
                     'type': _converse.PRIVATE_CHAT_TYPE,
-                    'message_type': 'chat',
-                    'url': '',
-                    'hidden': _.includes(['mobile', 'fullscreen'], _converse.view_mode)
+                    'url': ''
                 }
             },
 
@@ -260,7 +266,7 @@ converse.plugins.add('converse-chatboxes', {
 
                 this.messages.on('change:upload', (message) => {
                     if (message.get('upload') === _converse.SUCCESS) {
-                        this.sendMessageStanza(this.createMessageStanza(message));
+                        _converse.api.send(this.createMessageStanza(message));
                     }
                 });
 
@@ -273,7 +279,8 @@ converse.plugins.add('converse-chatboxes', {
                     // and we listen for change:chat_state, so shouldn't set it to ACTIVE here.
                     'box_id' : b64_sha1(this.get('jid')),
                     'time_opened': this.get('time_opened') || moment().valueOf(),
-                    'user_id' : Strophe.getNodeFromJid(this.get('jid'))
+                    'user_id' : Strophe.getNodeFromJid(this.get('jid')),
+                    'nickname':_.get(_converse.api.contacts.get(this.get('jid')), 'attributes.nickname')
                 });
             },
 
@@ -286,6 +293,19 @@ converse.plugins.add('converse-chatboxes', {
 
             getDisplayName () {
                 return this.vcard.get('fullname') || this.get('jid');
+            },
+
+            getUpdatedMessageAttributes (message, stanza) {
+                // Overridden in converse-muc and converse-mam
+                return {};
+            },
+
+            updateMessage (message, stanza) {
+                // Overridden in converse-muc and converse-mam
+                const attrs = this.getUpdatedMessageAttributes(message, stanza);
+                if (attrs) {
+                    message.save(attrs, {'patch': true});
+                }
             },
 
             handleMessageCorrection (stanza) {
@@ -313,6 +333,37 @@ converse.plugins.add('converse-chatboxes', {
                 }
                 return false;
             },
+
+            getDuplicateMessage (stanza) {
+                return  this.findDuplicateFromOriginID(stanza) || this.findDuplicateFromStanzaID(stanza);
+            },
+
+            findDuplicateFromOriginID  (stanza) {
+                const origin_id = sizzle(`origin-id[xmlns="${Strophe.NS.SID}"]`, stanza).pop();
+                if (!origin_id) {
+                    return null;
+                }
+                return this.messages.findWhere({
+                    'origin_id': origin_id.getAttribute('id'),
+                    'sender': 'me'
+                });
+            },
+
+            async findDuplicateFromStanzaID(stanza) {
+                const stanza_id = sizzle(`stanza-id[xmlns="${Strophe.NS.SID}"]`, stanza).pop();
+                if (!stanza_id) {
+                    return false;
+                }
+                const by_jid = stanza_id.getAttribute('by');
+                const result = await _converse.api.disco.supports(Strophe.NS.SID, by_jid);
+                if (!result.length) {
+                    return false;
+                }
+                const query = {};
+                query[`stanza_id ${by_jid}`] = stanza_id.getAttribute('id');
+                return this.messages.findWhere(query);
+            },
+
             
             sendMarker(to_jid, id, type) {
                 const stanza = $msg({
@@ -324,7 +375,7 @@ converse.plugins.add('converse-chatboxes', {
                 _converse.api.send(stanza);
             },
 
-            handleChatMarker (stanza, from_jid, is_carbon) {
+            handleChatMarker (stanza, from_jid, is_carbon, is_roster_contact, is_mam) {
                 const to_bare_jid = Strophe.getBareJidFromJid(stanza.getAttribute('to'));
                 if (to_bare_jid !== _converse.bare_jid) {
                     return false;
@@ -334,15 +385,17 @@ converse.plugins.add('converse-chatboxes', {
                     return false;
                 } else if (markers.length > 1) {
                     _converse.log(
-                        'onMessage: Ignoring incoming stanza with multiple message markers',
+                        'handleChatMarker: Ignoring incoming stanza with multiple message markers',
                         Strophe.LogLevel.ERROR
                     );
                     _converse.log(stanza, Strophe.LogLevel.ERROR);
                     return false;
                 } else {
                     const marker = markers.pop();
-                    if (marker.nodeName === 'markable' && !is_carbon) {
-                        this.sendMarker(from_jid, stanza.getAttribute('id'), 'received');
+                    if (marker.nodeName === 'markable') {
+                        if (is_roster_contact && !is_carbon && !is_mam) {
+                            this.sendMarker(from_jid, stanza.getAttribute('id'), 'received');
+                        }
                         return false;
                     } else {
                         const msgid = marker && marker.getAttribute('id'),
@@ -368,7 +421,7 @@ converse.plugins.add('converse-chatboxes', {
                 _converse.api.send(receipt_stanza);
             },
 
-            handleReceipt (stanza, from_jid, is_carbon, is_me) {
+            handleReceipt (stanza, from_jid, is_carbon, is_me, is_mam) {
                 const requests_receipt = !_.isUndefined(sizzle(`request[xmlns="${Strophe.NS.RECEIPTS}"]`, stanza).pop());
                 if (requests_receipt && !is_carbon && !is_me) {
                     this.sendReceiptStanza(from_jid, stanza.getAttribute('id'));
@@ -401,15 +454,16 @@ converse.plugins.add('converse-chatboxes', {
                         'type': this.get('message_type'),
                         'id': message.get('edited') && _converse.connection.getUniqueId() || message.get('msgid'),
                     }).c('body').t(message.get('message')).up()
-                      .c(_converse.ACTIVE, {'xmlns': Strophe.NS.CHATSTATES}).up();
+                      .c(_converse.ACTIVE, {'xmlns': Strophe.NS.CHATSTATES}).root();
+
                 if (message.get('type') === 'chat') {
-                    stanza.c('request', {'xmlns': Strophe.NS.RECEIPTS}).up();
+                    stanza.c('request', {'xmlns': Strophe.NS.RECEIPTS}).root();
                 }
                 if (message.get('is_spoiler')) {
                     if (message.get('spoiler_hint')) {
-                        stanza.c('spoiler', {'xmlns': Strophe.NS.SPOILER}, message.get('spoiler_hint')).up();
+                        stanza.c('spoiler', {'xmlns': Strophe.NS.SPOILER}, message.get('spoiler_hint')).root();
                     } else {
-                        stanza.c('spoiler', {'xmlns': Strophe.NS.SPOILER}).up();
+                        stanza.c('spoiler', {'xmlns': Strophe.NS.SPOILER}).root();
                     }
                 }
                 (message.get('references') || []).forEach(reference => {
@@ -422,60 +476,61 @@ converse.plugins.add('converse-chatboxes', {
                     if (reference.uri) {
                         attrs.uri = reference.uri;
                     }
-                    stanza.c('reference', attrs).up();
+                    stanza.c('reference', attrs).root();
                 });
 
                 if (message.get('oob_url')) {
-                    stanza.c('x', {'xmlns': Strophe.NS.OUTOFBAND}).c('url').t(message.get('oob_url')).up();
+                    stanza.c('x', {'xmlns': Strophe.NS.OUTOFBAND}).c('url').t(message.get('oob_url')).root();
                 }
                 if (message.get('edited')) {
                     stanza.c('replace', {
                         'xmlns': Strophe.NS.MESSAGE_CORRECT,
                         'id': message.get('msgid')
-                    }).up();
+                    }).root();
+                }
+                if (message.get('origin_id')) {
+                    stanza.c('origin-id', {'xmlns': Strophe.NS.SID, 'id': message.get('origin_id')}).root();
                 }
                 return stanza;
             },
 
-            sendMessageStanza (stanza) {
-                _converse.api.send(stanza);
-                if (_converse.forward_messages) {
-                    // Forward the message, so that other connected resources are also aware of it.
-                    _converse.api.send(
-                        $msg({
-                            'to': _converse.bare_jid,
-                            'type': this.get('message_type'),
-                        }).c('forwarded', {'xmlns': Strophe.NS.FORWARD})
-                            .c('delay', {
-                                    'xmns': Strophe.NS.DELAY,
-                                    'stamp': moment().format()
-                            }).up()
-                          .cnode(stanza.tree())
-                    );
-                }
-            },
-
             getOutgoingMessageAttributes (text, spoiler_hint) {
-                const is_spoiler = this.get('composing_spoiler');
-                return _.extend(this.toJSON(), {
-                    'id': _converse.connection.getUniqueId(),
+                const is_spoiler = this.get('composing_spoiler'),
+                      origin_id = _converse.connection.getUniqueId();
+
+                return {
+                    'jid': this.get('jid'),
+                    'nickname': this.get('nickname'),
+                    'msgid': origin_id,
+                    'origin_id': origin_id,
                     'fullname': _converse.xmppstatus.get('fullname'),
                     'from': _converse.bare_jid,
+                    'is_single_emoji': text ? u.isSingleEmoji(text) : false,
                     'sender': 'me',
                     'time': moment().format(),
                     'message': text ? u.httpToGeoUri(u.shortnameToUnicode(text), _converse) : undefined,
                     'is_spoiler': is_spoiler,
                     'spoiler_hint': is_spoiler ? spoiler_hint : undefined,
                     'type': this.get('message_type')
-                });
+                }
             },
 
-            sendMessage (attrs) {
-                /* Responsible for sending off a text message.
-                 *
-                 *  Parameters:
-                 *    (Message) message - The chat message
-                 */
+            /**
+             * Responsible for sending off a text message inside an ongoing
+             * chat conversation.
+             *
+             * @method _converse.ChatBox#sendMessage
+             * @memberOf _converse.ChatBox
+             *
+             * @param {String} text - The chat message text
+             * @param {String} spoiler_hint - An optional hint, if the message being sent is a spoiler
+             *
+             * @example
+             * const chat = _converse.api.chats.get('buddy1@example.com');
+             * chat.sendMessage('hello world');
+             */
+            sendMessage (text, spoiler_hint) {
+                const attrs = this.getOutgoingMessageAttributes(text, spoiler_hint);
                 let message = this.messages.findWhere('correcting')
                 if (message) {
                     const older_versions = message.get('older_versions') || [];
@@ -490,7 +545,7 @@ converse.plugins.add('converse-chatboxes', {
                 } else {
                     message = this.messages.create(attrs);
                 }
-                this.sendMessageStanza(this.createMessageStanza(message));
+                _converse.api.send(this.createMessageStanza(message));
                 return true;
             },
 
@@ -574,6 +629,35 @@ converse.plugins.add('converse-chatboxes', {
                 });
             },
 
+            getStanzaIDs (stanza) {
+                /* Extract the XEP-0359 stanza IDs from the passed in stanza
+                 * and return a map containing them.
+                 *
+                 * Parameters:
+                 *    (XMLElement) stanza - The message stanza
+                 */
+                const attrs = {};
+                const stanza_ids = sizzle(`stanza-id[xmlns="${Strophe.NS.SID}"]`, stanza);
+                if (stanza_ids.length) {
+                    stanza_ids.forEach(s => (attrs[`stanza_id ${s.getAttribute('by')}`] = s.getAttribute('id')));
+                }
+                const result = sizzle(`message > result[xmlns="${Strophe.NS.MAM}"]`, stanza).pop();
+                if (result) {
+                    const by_jid = stanza.getAttribute('from');
+                    attrs[`stanza_id ${by_jid}`] = result.getAttribute('id');
+                }
+
+                const origin_id = sizzle(`origin-id[xmlns="${Strophe.NS.SID}"]`, stanza).pop();
+                if (origin_id) {
+                    attrs['origin_id'] = origin_id.getAttribute('id');
+                }
+                return attrs;
+            },
+
+            isArchived (original_stanza) {
+                return !_.isNil(sizzle(`result[xmlns="${Strophe.NS.MAM}"]`, original_stanza).pop());
+            },
+
             getMessageAttributesFromStanza (stanza, original_stanza) {
                 /* Parses a passed in message stanza and returns an object
                  * of attributes.
@@ -586,28 +670,31 @@ converse.plugins.add('converse-chatboxes', {
                  *      that contains the message stanza, if it was
                  *      contained, otherwise it's the message stanza itself.
                  */
-                const archive = sizzle(`result[xmlns="${Strophe.NS.MAM}"]`, original_stanza).pop(),
-                      spoiler = sizzle(`spoiler[xmlns="${Strophe.NS.SPOILER}"]`, original_stanza).pop(),
+                const spoiler = sizzle(`spoiler[xmlns="${Strophe.NS.SPOILER}"]`, original_stanza).pop(),
                       delay = sizzle(`delay[xmlns="${Strophe.NS.DELAY}"]`, original_stanza).pop(),
+                      text = _converse.chatboxes.getMessageBody(stanza) || undefined,
                       chat_state = stanza.getElementsByTagName(_converse.COMPOSING).length && _converse.COMPOSING ||
                             stanza.getElementsByTagName(_converse.PAUSED).length && _converse.PAUSED ||
                             stanza.getElementsByTagName(_converse.INACTIVE).length && _converse.INACTIVE ||
                             stanza.getElementsByTagName(_converse.ACTIVE).length && _converse.ACTIVE ||
                             stanza.getElementsByTagName(_converse.GONE).length && _converse.GONE;
 
-                const attrs = {
+                const attrs = _.extend({
                     'chat_state': chat_state,
-                    'is_archived': !_.isNil(archive),
+                    'is_archived': this.isArchived(original_stanza),
                     'is_delayed': !_.isNil(delay),
                     'is_spoiler': !_.isNil(spoiler),
-                    'message': _converse.chatboxes.getMessageBody(stanza) || undefined,
+                    'is_single_emoji': text ? u.isSingleEmoji(text) : false,
+                    'message': text,
                     'msgid': stanza.getAttribute('id'),
                     'references': this.getReferencesFromStanza(stanza),
                     'subject': _.propertyOf(stanza.querySelector('subject'))('textContent'),
                     'thread': _.propertyOf(stanza.querySelector('thread'))('textContent'),
                     'time': delay ? delay.getAttribute('stamp') : moment().format(),
                     'type': stanza.getAttribute('type')
-                };
+                }, this.getStanzaIDs(original_stanza));
+
+
                 if (attrs.type === 'groupchat') {
                     attrs.from = stanza.getAttribute('from');
                     attrs.nick = Strophe.unescapeNode(Strophe.getResourceFromJid(attrs.from));
@@ -619,7 +706,7 @@ converse.plugins.add('converse-chatboxes', {
                         attrs.fullname = _converse.xmppstatus.get('fullname');
                     } else {
                         attrs.sender = 'them';
-                        attrs.fullname = this.get('fullname');
+                        attrs.fullname = this.get('fullname') || this.get('fullname')
                     }
                 }
                 _.each(sizzle(`x[xmlns="${Strophe.NS.OUTOFBAND}"]`, stanza), (xform) => {
@@ -629,20 +716,9 @@ converse.plugins.add('converse-chatboxes', {
                 if (spoiler) {
                     attrs.spoiler_hint = spoiler.textContent.length > 0 ? spoiler.textContent : '';
                 }
+                // We prefer to use one of the XEP-0359 unique and stable stanza IDs as the Model id, to avoid duplicates.
+                attrs['id'] = attrs['origin_id'] || attrs[`stanza_id ${attrs.from}`] || _converse.connection.getUniqueId();
                 return attrs;
-            },
-
-            async createMessage (stanza, original_stanza) {
-                const msgid = stanza.getAttribute('id'),
-                      message = msgid && this.messages.findWhere({msgid});
-                if (!message) {
-                    // Only create the message when we're sure it's not a duplicate
-                    const attrs = await this.getMessageAttributesFromStanza(stanza, original_stanza);
-                    if (attrs['chat_state'] || !u.isEmptyMessage(attrs)) {
-                        const msg = this.messages.create(attrs);
-                        this.incrementUnreadMsgCounter(msg);
-                    }
-                }
             },
 
             isHidden () {
@@ -806,7 +882,9 @@ converse.plugins.add('converse-chatboxes', {
                 }
 
                 let from_jid = stanza.getAttribute('from'),
-                    is_carbon = false;
+                    is_carbon = false,
+                    is_mam = false;
+
                 const forwarded = stanza.querySelector('forwarded'),
                       original_stanza = stanza;
 
@@ -814,6 +892,7 @@ converse.plugins.add('converse-chatboxes', {
                     const forwarded_message = forwarded.querySelector('message'),
                           forwarded_from = forwarded_message.getAttribute('from');
                     is_carbon = !_.isNull(stanza.querySelector(`received[xmlns="${Strophe.NS.CARBONS}"]`));
+                    is_mam = sizzle(`message > result[xmlns="${Strophe.NS.MAM}"]`, stanza).length > 0;
 
                     if (is_carbon && Strophe.getBareJidFromJid(forwarded_from) !== from_jid) {
                         // Prevent message forging via carbons
@@ -824,11 +903,13 @@ converse.plugins.add('converse-chatboxes', {
                     from_jid = stanza.getAttribute('from');
                     to_jid = stanza.getAttribute('to');
                 }
+
                 const from_bare_jid = Strophe.getBareJidFromJid(from_jid),
                       from_resource = Strophe.getResourceFromJid(from_jid),
                       is_me = from_bare_jid === _converse.bare_jid;
 
-                let contact_jid;
+                let contact_jid,
+                    is_roster_contact = false;
                 if (is_me) {
                     // I am the sender, so this must be a forwarded message...
                     if (_.isNull(to_jid)) {
@@ -840,16 +921,33 @@ converse.plugins.add('converse-chatboxes', {
                     contact_jid = Strophe.getBareJidFromJid(to_jid);
                 } else {
                     contact_jid = from_bare_jid;
+                    await _converse.api.waitUntil('rosterContactsFetched');
+                    is_roster_contact = !_.isUndefined(_converse.roster.get(contact_jid));
+                    if (!is_roster_contact && !_converse.allow_non_roster_messaging) {
+                        return;
+                    }
                 }
                 // Get chat box, but only create when the message has something to show to the user
                 const has_body = sizzle(`body, encrypted[xmlns="${Strophe.NS.OMEMO}"]`, stanza).length > 0,
-                      chatbox_attrs = {'fullname': _.get(_converse.api.contacts.get(contact_jid), 'attributes.fullname')},
-                      chatbox = this.getChatBox(contact_jid, chatbox_attrs, has_body);
-                if (chatbox &&
-                        !chatbox.handleMessageCorrection(stanza) &&
-                        !chatbox.handleReceipt (stanza, from_jid, is_carbon, is_me) &&
-                        !chatbox.handleChatMarker(stanza, from_jid, is_carbon)) {
-                    await chatbox.createMessage(stanza, original_stanza);
+                      roster_nick = _.get(_converse.api.contacts.get(contact_jid), 'attributes.nickname'),
+                      chatbox = this.getChatBox(contact_jid, {'nickname': roster_nick}, has_body);
+
+                if (chatbox) {
+                    const message = await chatbox.getDuplicateMessage(stanza);
+                    if (message) {
+                        chatbox.updateMessage(message, original_stanza);
+                    }
+                    if (!message &&
+                            !chatbox.handleMessageCorrection(stanza) &&
+                            !chatbox.handleReceipt (stanza, from_jid, is_carbon, is_me, is_mam) &&
+                            !chatbox.handleChatMarker(stanza, from_jid, is_carbon, is_roster_contact, is_mam)) {
+
+                        const attrs = await chatbox.getMessageAttributesFromStanza(stanza, original_stanza);
+                        if (attrs['chat_state'] || !u.isEmptyMessage(attrs)) {
+                            const msg = chatbox.messages.create(attrs);
+                            chatbox.incrementUnreadMsgCounter(msg);
+                        }
+                    }
                 }
                 _converse.emit('message', {'stanza': original_stanza, 'chatbox': chatbox});
             },
@@ -1018,7 +1116,7 @@ converse.plugins.add('converse-chatboxes', {
                  *
                  * @method _converse.api.chats.get
                  * @param {String|string[]} name - e.g. 'buddy@example.com' or ['buddy1@example.com', 'buddy2@example.com']
-                 * @returns {Backbone.Model}
+                 * @returns {_converse.ChatBox}
                  *
                  * @example
                  * // To return a single chat, provide the JID of the contact you're chatting with in that chat:

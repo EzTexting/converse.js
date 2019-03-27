@@ -19,7 +19,7 @@
 
     describe("A chat room", function () {
 
-        it("can be bookmarked", mock.initConverseWithPromises(
+        it("can be bookmarked", mock.initConverse(
             null, ['rosterGroupsFetched'], {},
             async function (done, _converse) {
                 
@@ -42,15 +42,17 @@
             spyOn(view, 'renderBookmarkForm').and.callThrough();
             spyOn(view, 'closeForm').and.callThrough();
             await test_utils.waitUntil(() => !_.isNull(view.el.querySelector('.toggle-bookmark')));
-            const bookmark = view.el.querySelector('.toggle-bookmark');
-            bookmark.click();
+            let toggle = view.el.querySelector('.toggle-bookmark');
+            expect(toggle.title).toBe('Bookmark this groupchat');
+            toggle.click();
             expect(view.renderBookmarkForm).toHaveBeenCalled();
 
             view.el.querySelector('.button-cancel').click();
             expect(view.closeForm).toHaveBeenCalled();
-            expect(u.hasClass('on-button', bookmark), false);
+            expect(u.hasClass('on-button', toggle), false);
+            expect(toggle.title).toBe('Bookmark this groupchat');
 
-            bookmark.click();
+            toggle.click();
             expect(view.renderBookmarkForm).toHaveBeenCalled();
 
             /* Client uploads data:
@@ -133,15 +135,17 @@
             });
             _converse.connection._dataRecv(test_utils.createRequest(stanza));
             await test_utils.waitUntil(() => view.model.get('bookmarked'));
+            toggle = view.el.querySelector('.toggle-bookmark');
             expect(view.model.get('bookmarked')).toBeTruthy();
-            expect(u.hasClass('on-button', bookmark), true);
+            expect(toggle.title).toBe('Unbookmark this groupchat');
+            expect(u.hasClass('on-button', toggle), true);
             // We ignore this IQ stanza... (unless it's an error stanza), so
             // nothing to test for here.
             done();
         }));
 
 
-        it("will be automatically opened if 'autojoin' is set on the bookmark", mock.initConverseWithPromises(
+        it("will be automatically opened if 'autojoin' is set on the bookmark", mock.initConverse(
             null, ['rosterGroupsFetched'], {},
             async function (done, _converse) {
 
@@ -150,6 +154,7 @@
                 [{'category': 'pubsub', 'type': 'pep'}],
                 ['http://jabber.org/protocol/pubsub#publish-options']
             );
+            await test_utils.waitUntil(() => _converse.bookmarks);
             let jid = 'lounge@localhost';
             _converse.bookmarks.create({
                 'jid': jid,
@@ -167,13 +172,24 @@
                 'nick': ' Othello'
             });
             expect(_.isUndefined(_converse.chatboxviews.get(jid))).toBeFalsy();
+
+            // Check that we don't auto-join if muc_respect_autojoin is false
+            _converse.muc_respect_autojoin = false;
+            jid = 'balcony@conference.shakespeare.lit';
+            _converse.bookmarks.create({
+                'jid': jid,
+                'autojoin': true,
+                'name':  'Balcony',
+                'nick': ' Othello'
+            });
+            expect(_.isUndefined(_converse.chatboxviews.get(jid))).toBe(true);
             done();
         }));
 
 
         describe("when bookmarked", function () {
 
-            it("displays that it's bookmarked through its bookmark icon", mock.initConverseWithPromises(
+            it("displays that it's bookmarked through its bookmark icon", mock.initConverse(
                 null, ['rosterGroupsFetched'], {},
                 async function (done, _converse) {
 
@@ -194,7 +210,7 @@
                 done();
             }));
 
-            it("can be unbookmarked", mock.initConverseWithPromises(
+            it("can be unbookmarked", mock.initConverse(
                 null, ['rosterGroupsFetched'], {},
                 async function (done, _converse) {
 
@@ -270,7 +286,7 @@
 
         describe("and when autojoin is set", function () {
 
-            it("will be be opened and joined automatically upon login", mock.initConverseWithPromises(
+            it("will be be opened and joined automatically upon login", mock.initConverse(
                 null, ['rosterGroupsFetched'], {},
                 async function (done, _converse) {
 
@@ -303,7 +319,7 @@
 
     describe("Bookmarks", function () {
 
-        it("can be pushed from the XMPP server", mock.initConverseWithPromises(
+        it("can be pushed from the XMPP server", mock.initConverse(
             ['send'], ['rosterGroupsFetched', 'connected'], {},
             async function (done, _converse) {
 
@@ -361,8 +377,8 @@
         }));
 
 
-        it("can be retrieved from the XMPP server", mock.initConverseWithPromises(
-            ['send'], ['chatBoxesFetched', 'roomsPanelRendered', 'rosterGroupsFetched'], {},
+        it("can be retrieved from the XMPP server", mock.initConverse(
+            {'connection': ['send']}, ['chatBoxesFetched', 'roomsPanelRendered', 'rosterGroupsFetched'], {},
             async function (done, _converse) {
 
             await test_utils.waitUntilDiscoConfirmed(
@@ -452,8 +468,8 @@
 
         describe("The rooms panel", function () {
 
-            it("shows a list of bookmarks", mock.initConverseWithPromises(
-                ['send'], ['rosterGroupsFetched'], {},
+            it("shows a list of bookmarks", mock.initConverse(
+                {'connection': ['send']}, ['rosterGroupsFetched'], {},
                 async function (done, _converse) {
 
                 await test_utils.waitUntilDiscoConfirmed(
@@ -540,8 +556,8 @@
             }));
 
 
-            it("remembers the toggle state of the bookmarks list", mock.initConverseWithPromises(
-                ['send'], ['rosterGroupsFetched'], {},
+            it("remembers the toggle state of the bookmarks list", mock.initConverse(
+                {'connection': ['send']}, ['rosterGroupsFetched'], {},
                 async function (done, _converse) {
 
                 test_utils.openControlBox();
@@ -606,7 +622,7 @@
 
     describe("When hide_open_bookmarks is true and a bookmarked room is opened", function () {
 
-        it("can be closed", mock.initConverseWithPromises(
+        it("can be closed", mock.initConverse(
             null, ['rosterGroupsFetched'],
             { hide_open_bookmarks: true },
             async function (done, _converse) {

@@ -491,7 +491,7 @@
             }
             @media screen and (max-width: $mobile-portrait-length) {
                 .brand-heading {
-                    font-size: 400%;
+                    font-size: 300%;
                 }
             }
         }
@@ -605,5 +605,10 @@
     }
     .converse-svg-logo {
         height: 1em;
+    }
+    #controlbox {
+        #converse-login-panel {
+            height: 100%;
+        }
     }
 }

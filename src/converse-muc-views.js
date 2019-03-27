@@ -1,10 +1,15 @@
 // Converse.js
-// http://conversejs.org
+// https://conversejs.org
 //
-// Copyright (c) 2013-2018, the Converse.js developers
+// Copyright (c) 2013-2019, the Converse.js developers
 // Licensed under the Mozilla Public License (MPLv2)
+//
+// XEP-0045 Multi-User Chat Views
 
 import "converse-modal";
+import "backbone.overview/backbone.orderedlistview";
+import "backbone.overview/backbone.overview";
+import "backbone.vdomview";
 import Awesomplete from "awesomplete";
 import _FormData from "formdata-polyfill";
 import converse from "@converse/headless/converse-core";
@@ -33,7 +38,7 @@ import tpl_spinner from "templates/spinner.html";
 import xss from "xss";
 
 
-const { Backbone, Promise, Strophe, b64_sha1, moment, f, sizzle, _, $build, $iq, $msg, $pres } = converse.env;
+const { Backbone, Promise, Strophe, moment, f, sizzle, _, $build, $iq, $msg, $pres } = converse.env;
 const u = converse.env.utils;
 const AFFILIATION_CHANGE_COMANDS = ['admin', 'ban', 'owner', 'member', 'revoke'];
 
@@ -58,22 +63,20 @@ converse.plugins.add('converse-muc-views', {
 
             renderRoomsPanel () {
                 const { _converse } = this.__super__;
+                if (this.roomspanel && u.isVisible(this.roomspanel.el)) {
+                    return;
+                }
                 this.roomspanel = new _converse.RoomsPanel({
                     'model': new (_converse.RoomsPanelModel.extend({
-                        'id': b64_sha1(`converse.roomspanel${_converse.bare_jid}`), // Required by sessionStorage
+                        'id': `converse.roomspanel${_converse.bare_jid}`, // Required by web storage
                         'browserStorage': new Backbone.BrowserStorage[_converse.config.get('storage')](
-                            b64_sha1(`converse.roomspanel${_converse.bare_jid}`))
+                            `converse.roomspanel${_converse.bare_jid}`)
                     }))()
                 });
                 this.roomspanel.model.fetch();
                 this.el.querySelector('.controlbox-pane').insertAdjacentElement(
                     'beforeEnd', this.roomspanel.render().el);
 
-                if (!this.roomspanel.model.get('nick')) {
-                    this.roomspanel.model.save({
-                        nick: _converse.xmppstatus.vcard.get('nickname') || Strophe.getNodeFromJid(_converse.bare_jid)
-                    });
-                }
                 _converse.emit('roomsPanelRendered');
             },
 
@@ -100,6 +103,9 @@ converse.plugins.add('converse-muc-views', {
         _converse.api.settings.update({
             'auto_list_rooms': false,
             'muc_disable_moderator_commands': false,
+            'muc_domain': undefined,
+            'locked_muc_nickname': false,
+            'locked_muc_domain': false,
             'muc_show_join_leave': true,
             'roomconfig_whitelist': [],
             'visible_toolbar_buttons': {
@@ -107,6 +113,10 @@ converse.plugins.add('converse-muc-views', {
             }
         });
 
+        if (_converse.locked_muc_domain && !_.isString(_converse.muc_domain)) {
+            throw new Error("Config Error: it makes no sense to set locked_muc_domain "+
+                            "to true when muc_domain is not set");
+        }
 
         function ___ (str) {
             /* This is part of a hack to get gettext to scan strings to be
@@ -119,7 +129,7 @@ converse.plugins.add('converse-muc-views', {
             return str;
         }
 
-        /* http://xmpp.org/extensions/xep-0045.html
+        /* https://xmpp.org/extensions/xep-0045.html
          * ----------------------------------------
          * 100 message      Entering a groupchat         Inform user that any occupant is allowed to see the user's full JID
          * 101 message (out of band)                     Affiliation change  Inform user that his or her affiliation changed while not in the groupchat
@@ -197,7 +207,7 @@ converse.plugins.add('converse-muc-views', {
              *  (XMLElement) stanza: The IQ stanza containing the groupchat
              *      info.
              */
-            // All MUC features found here: http://xmpp.org/registrar/disco-features.html
+            // All MUC features found here: https://xmpp.org/registrar/disco-features.html
             el.querySelector('span.spinner').remove();
             el.querySelector('a.room-info').classList.add('selected');
             el.insertAdjacentHTML(
@@ -263,22 +273,32 @@ converse.plugins.add('converse-muc-views', {
 
             initialize () {
                 _converse.BootstrapModal.prototype.initialize.apply(this, arguments);
+                if (_converse.muc_domain && !this.model.get('muc_domain')) {
+                    this.model.save('muc_domain', _converse.muc_domain);
+                }
                 this.model.on('change:muc_domain', this.onDomainChange, this);
             },
 
             toHTML () {
+                const muc_domain = this.model.get('muc_domain') || _converse.muc_domain;
                 return tpl_list_chatrooms_modal(_.extend(this.model.toJSON(), {
                     'heading_list_chatrooms': __('Query for Groupchats'),
                     'label_server_address': __('Server address'),
                     'label_query': __('Show groupchats'),
-                    'server_placeholder': __('conference.example.org')
+                    'show_form': !_converse.locked_muc_domain,
+                    'server_placeholder': muc_domain ? muc_domain : __('conference.example.org')
                 }));
             },
 
             afterRender () {
-                this.el.addEventListener('shown.bs.modal', () => {
-                    this.el.querySelector('input[name="server"]').focus();
-                }, false);
+                if (_converse.locked_muc_domain) {
+                    this.updateRoomsList();
+                } else {
+                    this.el.addEventListener('shown.bs.modal',
+                        () => this.el.querySelector('input[name="server"]').focus(),
+                        false
+                    );
+                }
             },
 
             openRoom (ev) {
@@ -320,9 +340,7 @@ converse.plugins.add('converse-muc-views', {
 
             informNoRoomsFound () {
                 const chatrooms_el = this.el.querySelector('.available-chatrooms');
-                chatrooms_el.innerHTML = tpl_rooms_results({
-                    'feedback_text': __('No groupchats found')
-                });
+                chatrooms_el.innerHTML = tpl_rooms_results({'feedback_text': __('No groupchats found')});
                 const input_el = this.el.querySelector('input[name="server"]');
                 input_el.classList.remove('hidden')
                 this.removeSpinner();
@@ -335,11 +353,7 @@ converse.plugins.add('converse-muc-views', {
                 const available_chatrooms = this.el.querySelector('.available-chatrooms');
                 this.rooms = iq.querySelectorAll('query item');
                 if (this.rooms.length) {
-                    // For translators: %1$s is a variable and will be
-                    // replaced with the XMPP server name
-                    available_chatrooms.innerHTML = tpl_rooms_results({
-                        'feedback_text': __('Groupchats found:')
-                    });
+                    available_chatrooms.innerHTML = tpl_rooms_results({'feedback_text': __('Groupchats found:')});
                     const fragment = document.createDocumentFragment();
                     const children = _.reject(_.map(this.rooms, this.roomStanzaItemToHTMLElement), _.isNil)
                     _.each(children, (child) => fragment.appendChild(child));
@@ -387,13 +401,22 @@ converse.plugins.add('converse-muc-views', {
                 'submit form.add-chatroom': 'openChatRoom'
             },
 
+            initialize () {
+                _converse.BootstrapModal.prototype.initialize.apply(this, arguments);
+                this.model.on('change:muc_domain', this.render, this);
+            },
+
             toHTML () {
+                let placeholder = '';
+                if (!_converse.locked_muc_domain) {
+                    const muc_domain = this.model.get('muc_domain') || _converse.muc_domain;
+                    placeholder = muc_domain ? `name@${muc_domain}` : __('name@conference.example.org');
+                }
                 return tpl_add_chatroom_modal(_.extend(this.model.toJSON(), {
-                    'heading_new_chatroom': __('Enter a new Groupchat'),
-                    'label_room_address': __('Groupchat address'),
-                    'label_nickname': __('Optional nickname'),
-                    'chatroom_placeholder': __('name@conference.example.org'),
-                    'label_join': __('Join'),
+                    '__': _converse.__,
+                    '_converse': _converse,
+                    'label_room_address': _converse.muc_domain ? __('Groupchat name') :  __('Groupchat address'),
+                    'chatroom_placeholder': placeholder
                 }));
             },
 
@@ -407,9 +430,18 @@ converse.plugins.add('converse-muc-views', {
                 const data = new FormData(form);
                 const jid = data.get('chatroom');
                 this.model.save('muc_domain', Strophe.getDomainFromJid(jid));
+                let nick;
+                if (_converse.locked_muc_nickname) {
+                    nick = _converse.getDefaultMUCNickname();
+                    if (!nick) {
+                        throw new Error("Using locked_muc_nickname but no nickname found!");
+                    }
+                } else {
+                    nick = data.get('nickname').trim();
+                }
                 return {
                     'jid': jid,
-                    'nick': data.get('nickname')
+                    'nick': nick
                 }
             },
 
@@ -420,7 +452,13 @@ converse.plugins.add('converse-muc-views', {
                     // Make sure defaults apply if no nick is provided.
                     data.nick = undefined;
                 }
-                _converse.api.rooms.open(data.jid, data);
+                let jid;
+                if (_converse.locked_muc_domain || (_converse.muc_domain && !u.isValidJID(data.jid))) {
+                    jid = `${Strophe.escapeNode(data.jid)}@${_converse.muc_domain}`;
+                } else {
+                    jid = data.jid
+                }
+                _converse.api.rooms.open(jid, _.extend(data, {jid}));
                 this.modal.hide();
                 ev.target.reset();
             }
@@ -477,7 +515,9 @@ converse.plugins.add('converse-muc-views', {
                 'click .upload-file': 'toggleFileUpload',
                 'keydown .chat-textarea': 'keyPressed',
                 'keyup .chat-textarea': 'keyUp',
-                'input .chat-textarea': 'inputChanged'
+                'input .chat-textarea': 'inputChanged',
+                'dragover .chat-textarea': 'onDragOver',
+                'drop .chat-textarea': 'onDrop',
             },
 
             initialize () {
@@ -509,23 +549,20 @@ converse.plugins.add('converse-muc-views', {
                 this.enterRoom();
             },
 
-            enterRoom (ev) {
+            async enterRoom (ev) {
                 if (ev) { ev.preventDefault(); }
                 if (this.model.get('connection_status') !==  converse.ROOMSTATUS.ENTERED) {
-                    const handler = () => {
-                        if (!u.isPersistableModel(this.model)) {
-                            // Happens during tests, nothing to do if this
-                            // is a hanging chatbox (i.e. not in the collection anymore).
-                            return;
-                        }
-                        this.populateAndJoin();
-                        _converse.emit('chatRoomOpened', this);
+                    await this.model.getRoomFeatures();
+                    if (!u.isPersistableModel(this.model)) {
+                        // XXX: Happens during tests, nothing to do if this
+                        // is a hanging chatbox (i.e. not in the collection anymore).
+                        return;
                     }
-                    this.model.getRoomFeatures().then(handler, handler);
+                    this.populateAndJoin();
                 } else {
                     this.fetchMessages();
-                    _converse.emit('chatRoomOpened', this);
                 }
+                _converse.emit('chatRoomOpened', this);
             },
 
             render () {
@@ -534,7 +571,7 @@ converse.plugins.add('converse-muc-views', {
                 this.renderHeading();
                 this.renderChatArea();
                 this.renderMessageForm();
-                this.initAutoComplete();
+                this.initMentionAutoComplete();
                 if (this.model.get('connection_status') !== converse.ROOMSTATUS.ENTERED) {
                     this.showSpinner();
                 }
@@ -561,16 +598,16 @@ converse.plugins.add('converse-muc-views', {
                 return this;
             },
 
-            initAutoComplete () {
+            initMentionAutoComplete () {
                 this.auto_complete = new _converse.AutoComplete(this.el, {
                     'auto_first': true,
                     'auto_evaluate': false,
                     'min_chars': 1,
                     'match_current_word': true,
-                    'match_on_tab': true,
                     'list': () => this.model.occupants.map(o => ({'label': o.getDisplayName(), 'value': `@${o.getDisplayName()}`})),
                     'filter': _converse.FILTER_STARTSWITH,
-                    'trigger_on_at': true
+                    'ac_triggers': ["Tab", "@"],
+                    'include_triggers': []
                 });
                 this.auto_complete.on('suggestion-box-selectcomplete', () => (this.auto_completing = false));
             },
@@ -657,6 +694,7 @@ converse.plugins.add('converse-muc-views', {
                  */
                 return tpl_chatroom_head(
                     _.extend(this.model.toJSON(), {
+                        '_converse': _converse,
                         'Strophe': Strophe,
                         'info_close': __('Close and leave this groupchat'),
                         'info_configure': __('Configure this groupchat'),
@@ -786,7 +824,7 @@ converse.plugins.add('converse-muc-views', {
                  * ignore <gone/> notifications in groupchats.
                  *
                  * As laid out in the business rules in XEP-0085
-                 * http://xmpp.org/extensions/xep-0085.html#bizrules-groupchat
+                 * https://xmpp.org/extensions/xep-0085.html#bizrules-groupchat
                  */
                 if (message.get('fullname') === this.model.get('nick')) {
                     // Don't know about other servers, but OpenFire sends
@@ -915,7 +953,7 @@ converse.plugins.add('converse-muc-views', {
                             `<strong>/ban</strong>: ${__('Ban user from groupchat')}`,
                             `<strong>/clear</strong>: ${__('Remove messages')}`,
                             `<strong>/deop</strong>: ${__('Change user role to participant')}`,
-                            `<strong>/destroy</strong>: ${__('Destroy room')}`,
+                            `<strong>/destroy</strong>: ${__('Remove this groupchat')}`,
                             `<strong>/help</strong>: ${__('Show this menu')}`,
                             `<strong>/kick</strong>: ${__('Kick user from groupchat')}`,
                             `<strong>/me</strong>: ${__('Write in 3rd person')}`,
@@ -1226,7 +1264,7 @@ converse.plugins.add('converse-muc-views', {
             },
 
             onReservedNickNotFound (message) {
-                const nick = this.model.getDefaultNick();
+                const nick = _converse.getDefaultMUCNickname();
                 if (nick) {
                     this.join(nick);
                 } else {
@@ -1245,7 +1283,7 @@ converse.plugins.add('converse-muc-views', {
                  */
                 if (_converse.muc_nickname_from_jid) {
                     const nick = presence.getAttribute('from').split('/')[1];
-                    if (nick === this.model.getDefaultNick()) {
+                    if (nick === _converse.getDefaultMUCNickname()) {
                         this.join(nick + '-2');
                     } else {
                         const del= nick.lastIndexOf("-");
@@ -1643,7 +1681,7 @@ converse.plugins.add('converse-muc-views', {
 
             showStatusMessages (stanza) {
                 /* Check for status codes and communicate their purpose to the user.
-                 * See: http://xmpp.org/registrar/mucstatus.html
+                 * See: https://xmpp.org/registrar/mucstatus.html
                  *
                  * Parameters:
                  *  (XMLElement) stanza: The message or presence stanza
@@ -1811,9 +1849,7 @@ converse.plugins.add('converse-muc-views', {
                 const show = this.model.get('show');
                 return tpl_occupant(
                     _.extend(
-                        { '_': _, // XXX Normally this should already be included,
-                                  // but with the current webpack build,
-                                  // we only get a subset of the _ methods.
+                        { '_': _,
                           'jid': '',
                           'show': show,
                           'hint_show': _converse.PRETTY_CHAT_STATUS[show],
@@ -1849,8 +1885,8 @@ converse.plugins.add('converse-muc-views', {
                 Backbone.OrderedListView.prototype.initialize.apply(this, arguments);
 
                 this.chatroomview = this.model.chatroomview;
-                this.chatroomview.model.on('change:open', this.renderInviteWidget, this);
                 this.chatroomview.model.on('change:affiliation', this.renderInviteWidget, this);
+                this.chatroomview.model.features.on('change:open', this.renderInviteWidget, this);
                 this.chatroomview.model.features.on('change', this.renderRoomFeatures, this);
 
                 this.render();
@@ -1917,11 +1953,14 @@ converse.plugins.add('converse-muc-views', {
 
 
             promptForInvite (suggestion) {
-                const reason = prompt(
-                    __('You are about to invite %1$s to the groupchat "%2$s". '+
-                       'You may optionally include a message, explaining the reason for the invitation.',
-                       suggestion.text.label, this.model.get('id'))
-                );
+                let reason = '';
+                if (!_converse.auto_join_on_invite) {
+                    reason = prompt(
+                        __('You are about to invite %1$s to the groupchat "%2$s". '+
+                           'You may optionally include a message, explaining the reason for the invitation.',
+                           suggestion.text.label, this.model.get('id'))
+                    );
+                }
                 if (reason !== null) {
                     this.chatroomview.model.directInvite(suggestion.text.value, reason);
                 }
@@ -1939,7 +1978,7 @@ converse.plugins.add('converse-muc-views', {
                       jid = el.value;
                 if (!jid || _.compact(jid.split('@')).length < 2) {
                     evt.target.outerHTML = tpl_chatroom_invite({
-                        'error_message': __('Please enter a valid XMPP username'),
+                        'error_message': __('Please enter a valid XMPP address'),
                         'label_invitation': __('Invite'),
                     });
                     this.initInviteWidget();
@@ -1955,7 +1994,7 @@ converse.plugins.add('converse-muc-views', {
 
             shouldInviteWidgetBeShown () {
                 return _converse.allow_muc_invitations &&
-                    (this.chatroomview.model.get('open') ||
+                    (this.chatroomview.model.features.get('open') ||
                         this.chatroomview.model.get('affiliation') === "owner"
                     );
             },
@@ -2038,7 +2077,15 @@ converse.plugins.add('converse-muc-views', {
             });
         });
 
-        _converse.on('controlboxInitialized', (view) => {
+        _converse.api.listen.on('clearSession', () => {
+            const view = _converse.chatboxviews.get('controlbox');
+            if (view && view.roomspanel) {
+                view.roomspanel.remove();
+                delete view.roomspanel;
+            }
+        });
+
+        _converse.api.listen.on('controlboxInitialized', (view) => {
             if (!_converse.allow_muc) {
                 return;
             }
@@ -2072,6 +2119,40 @@ converse.plugins.add('converse-muc-views', {
              * @memberOf _converse.api
              */
             'roomviews': {
+                /**
+                 * Retrieves a groupchat (aka chatroom) view. The chat should already be open.
+                 *
+                 * @method _converse.api.roomviews.get
+                 * @param {String|string[]} name - e.g. 'coven@conference.shakespeare.lit' or
+                 *  ['coven@conference.shakespeare.lit', 'cave@conference.shakespeare.lit']
+                 * @returns {Backbone.View} Backbone.View representing the groupchat
+                 *
+                 * @example
+                 * // To return a single view, provide the JID of the groupchat
+                 * const view = _converse.api.roomviews.get('coven@conference.shakespeare.lit');
+                 *
+                 * @example
+                 * // To return an array of views, provide an array of JIDs:
+                 * const views = _converse.api.roomviews.get(['coven@conference.shakespeare.lit', 'cave@conference.shakespeare.lit']);
+                 *
+                 * @example
+                 * // To return views of all open groupchats, call the method without any parameters::
+                 * const views = _converse.api.roomviews.get();
+                 *
+                 */
+                get (jids) {
+                    if (_.isArray(jids)) {
+                        const views = _converse.api.chatviews.get(jids);
+                        return views.filter(v => v.model.get('type') === _converse.CHATROOMS_TYPE)
+                    } else {
+                        const view = _converse.api.chatviews.get(jids);
+                        if (view.model.get('type') === _converse.CHATROOMS_TYPE) {
+                            return view;
+                        } else {
+                            return null;
+                        }
+                    }
+                },
                 /**
                  * Lets you close open chatrooms.
                  *

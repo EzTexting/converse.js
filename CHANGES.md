@@ -1,17 +1,65 @@
 # Changelog
 
-## 4.1.1 (unreleased)
+## 4.1.3 (Unreleased)
+
+- Updated translation: lt
+- Upgrade to Backbone 1.4.0, Strophe 1.3.2 and Jasmine 2.99.2
+- Fix "flashing" of roster filter when you have less than 5 roster contacts.
+- Fix handling of CAPTCHAs offered by ejabberd.
+- Don't send out receipts or markers for MAM messages
+- Allow setting of debug mode via URL with `/#converse?debug=true`
+- New config setting [locked_muc_domain](https://conversejs.org/docs/html/configuration.html#locked-muc-domain)
+- New config setting [locked_muc_nickname](https://conversejs.org/docs/html/configuration.html#locked-muc-nickname)
+- New config setting [show_client_info](https://conversejs.org/docs/html/configuration.html#show-client-info)
+- Render inline images served over HTTP if Converse itself was loaded on an unsecured (HTTP) page.
+- Document new API method [sendMessage](https://conversejs.org/docs/html/api/-_converse.ChatBox.html#sendMessage)
+- Make sure `nickname` passed in via `_converse.initialize` has first preference as MUC nickname
+- Make sure required registration fields have "required" attribute
+- #1149: With `xhr_user_search_url`, contact requests are not being sent out
+- #1213: Switch roster filter input and icons
+- #1327: fix False mentions positives in URLs and Email addresses
+- #1352: Add [Jed](https://github.com/messageformat/Jed) as dependency of `@converse/headless`
+- #1373: Re-add support for the [muc_domain](https://conversejs.org/docs/html/configuration.html#muc-domain) setting
+- #1400: When a chat message is just an emoji, enlarge the emoji
+- #1407: Silent errors when trying to use whitespace as MUC nickname
+- #1437: List of groupchats in modal doesn't scroll
+- #1457: Wrong tooltip shown for "unbookmark" icon
+- #1467: Fix rendering of URLs enclosed with sharp brackets such as <https://example.org>
+- #1479: Allow file upload by drag & drop also in MUCs
+- #1487: New config option [muc_respect_autojoin](https://conversejs.org/docs/html/configuration.html#muc-respect-autojoin)
+- #1501: Don't prompt for a reason if [auto_join_on_invite](https://conversejs.org/docs/html/configuration.html#auto-join-on-invite) is `true`
+- #1507: Make message id and origin-id identical in order to fix LMC with Conversations
+- #1508: Minimized bookmarked chatboxes should not be always maximized after page reload.
+
+## 4.1.2 (2019-02-22)
+
+- Updated translations: af, cz, de, es, he, it, nl, nl_BE, pt_BR, zh_CN
+- Bugfix. Prevent duplicate messages by comparing MAM archive id to XEP-0359 stanza ids.
+- Bugfix. Open groupchats not shown when logging in after disconnection.
+- #1406: `TypeError: e.devicelists is undefined` when unchecking the "trusted device" checkbox
+
+## 4.1.1 (2019-02-18)
 
 - Updated translations: af, cz, de, es, eu, ga, he, hi, ja, nb, nl_BE, zh_CN
 - New language supported: Esperanto
 - Accessibility: Tag the chat-content as an ARIA live region, for screen readers
+- Set releases URL to new Github repo
+- Rudimentary support for XEP-0333 chat markers
+- Better support for XEP-0359 `stanza-id` and `origin-id` elements.
+- Bugfix: restore textarea size after sending a message
+- Bugfix: MUC invite form not appearing
 - #1369 Don't wrongly interpret message with `subject` as a topic change.
-- #1408 new config option `roomconfig_whitelist`
+- #1405 Status of contacts list are not displayed properly
+- #1408 New config option [roomconfig_whitelist](https://conversejs.org/docs/html/configuration.html#roomconfig-whitelist)
+- #1410 HTTP upload not working if conversations push proxy is used
+- #1412 MUC moderator commands can be disabled selectively by config
+- #1413 Fix moderator commands that change affiliation
+- #1414 Prevent duplicate messages on MUC join
 - #1417 Margin between nickname and badge
-- #1421 fix direct invite for membersonly room
+- #1421 Fix direct invite for membersonly room
 - #1422 Resurrect the `muc_show_join_leave` option
-- #1412 muc moderator commands can be disabled selectively by config
-- #1413 fix moderator commands that change affiliation
+- #1438 Update contact nickname when receiving a roster push
+- #1442 MUC read receipts causing empty lines
 
 ## 4.1.0 (2019-01-11)
 
@@ -615,7 +663,7 @@ More info here: https://github.com/LeaVerou/awesomplete/pull/17082
 ## 2.0.4 (2016-12-13)
 - #737: Bugfix. Translations weren't being applied. [jcbrand]
 - Fetch room info and store it on the room model.
-  For context, see: http://xmpp.org/extensions/xep-0045.html#disco-roominfo [jcbrand]
+  For context, see: https://xmpp.org/extensions/xep-0045.html#disco-roominfo [jcbrand]
 - Bugfix. Switching from bookmarks form to config form shows only the spinner. [jcbrand]
 - Bugfix. Other room occupants sometimes not shown when reloading the page. [jcbrand]
 - Bugfix. Due to changes in `converse-core` the controlbox wasn't aware anymore of

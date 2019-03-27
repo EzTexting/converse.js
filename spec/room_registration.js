@@ -14,7 +14,7 @@
         describe("The /register commmand", function () {
 
             it("allows you to register your nickname in a room",
-                mock.initConverseWithPromises(
+                mock.initConverse(
                     null, ['rosterGroupsFetched', 'chatBoxesFetched'], {'auto_register_muc_nickname': true},
                     function (done, _converse) {
 
@@ -78,7 +78,7 @@
         describe("The auto_register_muc_nickname option", function () {
 
             it("allows you to automatically register your nickname when joining a room",
-                mock.initConverseWithPromises(
+                mock.initConverse(
                     null, ['rosterGroupsFetched', 'chatBoxesFetched'], {'auto_register_muc_nickname': true},
                     function (done, _converse) {
 
@@ -112,7 +112,7 @@
                 }).then(stanza => {
                     // The user has just entered the room (because join was called)
                     // and receives their own presence from the server.
-                    // See example 24: http://xmpp.org/extensions/xep-0045.html#enter-pres
+                    // See example 24: https://xmpp.org/extensions/xep-0045.html#enter-pres
                     const presence = $pres({
                             to: _converse.connection.jid,
                             from: room_jid,
