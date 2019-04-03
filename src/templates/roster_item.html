@@ -4,7 +4,7 @@
     {[ if (o.num_unread) { ]}
     <span class="msgs-indicator">{{{ o.num_unread }}}</span>
     {[ } ]}
-    <span class="contact-name {[ if (o.num_unread) { ]} unread-msgs {[ } ]}">{{{o.display_name}}}</span></a>
+    <span class="contact-name {[ if (o.num_unread) { ]} unread-msgs {[ } ]}">{{{decodeURIComponent(o.display_name.split('@')[0])}}}</span></a>
 {[ if (o.allow_contact_removal) { ]}
-<a class="list-item-action remove-xmpp-contact far fa-trash-alt" title="{{{o.desc_remove}}}" href="#"></a>
+<!--<a class="list-item-action remove-xmpp-contact far fa-trash-alt" title="{{{o.desc_remove}}}" href="#"></a>-->
 {[ } ]}

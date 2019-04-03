@@ -12,29 +12,35 @@
     <link type="text/css" rel="stylesheet" media="screen" href="css/converse.css" />
     <script src="3rdparty/libsignal-protocol-javascript/dist/libsignal-protocol.js"></script>
     <script src="dist/converse.js"></script>
+    <script src="plugins/converse-ez-plugins.js"></script>
 </head>
 
 <body class="reset">
 <div id="conversejs-bg"></div>
 <script>
+    const xmppURL = 'xmpp.callfire.com';
     converse.initialize({
         auto_away: 300,
         i18n: 'en',
-        // auto_join_rooms: [
-        //     'discuss@conference.conversejs.org',
-        //     'prosody@conference.prosody.im',
-        //     'jdev@conference.jabber.org'
-        // ],
-        // websocket_url: 'ws://chat.example.org:5280/xmpp-websocket',
         view_mode: 'fullscreen',
-        notify_all_room_messages: [
-            'discuss@conference.conversejs.org'
-        ],
-        muc_respect_autojoin: false,
-        // bosh_service_url: 'http://chat.example.org:5280/http-bind/',
-        bosh_service_url: 'https://conversejs.org/http-bind/', // Please use this connection manager only for testing purposes
+        archived_messages_page_size: '500',
+        // bosh_service_url: 'https://'+ xmppURL + ':7443/http-bind/',
+        websocket_url: 'wss://'+ xmppURL +':7443/ws',
         message_archiving: 'always',
-        debug: true
+        debug: true,
+        locked_domain: xmppURL,
+        muc_nickname_from_jid: true,
+        auto_list_rooms: true,
+        auto_join_rooms: true,
+        auto_join_on_invite: true,
+        notify_all_room_messages: true,
+        auto_reconnect: true,
+        allow_bookmarks: false,
+        muc_domain: 'conference.' + xmppURL,
+        whitelisted_plugins: [
+            'EZ_Sidebar',
+            'EZ_RoomJoin'
+        ]
     });
 </script>
 </body>

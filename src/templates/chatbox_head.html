@@ -7,11 +7,12 @@
                 {[ if (o.url) { ]}
                     <a href="{{{o.url}}}" target="_blank" rel="noopener" class="user">
                 {[ } ]}
-                        {{{ o.nickname || o.fullname || o.jid }}}
+                        {{{ decodeURIComponent(o.jid.split('@')[0]) }}}
+                        <!--{{{ o.nickname || o.fullname || o.jid }}}-->
                 {[ if (o.url) { ]}
                     </a>
                 {[ } ]}
-                <p class="user-custom-message">{{{ o.status }}}</p>
+                <!--<p class="user-custom-message">{{{ o.status }}}</p>-->
             </div>
         </div>
     </div>

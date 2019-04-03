@@ -779,7 +779,7 @@ converse.plugins.add('converse-rosterview', {
             render () {
                 this.el.innerHTML = tpl_roster({
                     'allow_contact_requests': _converse.allow_contact_requests,
-                    'heading_contacts': __('Contacts'),
+                    'heading_contacts': __('Employees'),
                     'title_add_contact': __('Add a contact'),
                     'title_sync_contacts': __('Re-sync your contacts')
                 });

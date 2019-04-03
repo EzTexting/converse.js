@@ -45,13 +45,15 @@
         position: relative;
 
         &.chat-head-chatbox {
-            background-color: var(--chat-head-color);
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #EDF1F3;
         }
 
         .avatar {
             height: 36px;
             width: 36px;
             margin-right: 0.5em;
+            border-radius: 100%;
         }
 
         .chatbox-title {
@@ -154,7 +156,7 @@
         .chat-title {
             display: var(--heading-display);
             font-family: var(--heading-font);
-            color: var(--heading-color);
+            color: #5C5C5C;
             display: block;
             line-height: var(--line-height-large);
             overflow: hidden;
@@ -274,9 +276,6 @@
                 min-height: var(--chat-textarea-height);
                 margin-bottom: -4px; // Not clear why this is necessar :(
                 resize: none;
-                &:active, &:focus{
-                    outline-color: var(--chat-head-color);
-                }
                 &.spoiler {
                     height: 42px;
                 }
@@ -301,13 +300,13 @@
                 margin: 0;
                 padding: 0.25em;
                 display: block;
-                border-top: 4px solid var(--chat-head-color);
                 background-color: white;
-                color: var(--chat-head-color);
+                border-top: 2px solid #eff3f5;
+                color: #eff3f5;
                 .fa, .fa:hover,
                 .far, .far:hover,
                 .fas, .fas:hover {
-                    color: var(--chat-head-color);
+                    color: #657b93;
                     font-size: var(--font-size-large);
                 }
                 .disabled {
@@ -603,7 +602,9 @@
             line-height: var(--line-height);
         }
         .chatbox-title {
-            @include make-col(10);
+            flex: 0 0 100%;
+            max-width: 100%;
+            text-align: center;
         }
         .chatbox-buttons {
             @include make-col(2);
@@ -633,12 +634,13 @@
         }
 
         .box-flyout {
-            background-color: var(--chat-head-color);
+            background-color: #FFFFFF;
             box-shadow: none;
             height: var(--fullpage-chat-height);
             min-height: calc(var(--fullpage-chat-height) / 2);
             width: var(--fullpage-chat-width);
             overflow: hidden;
+            border: none;
         }
         .chat-body {
             height: calc(100% - var(--fullpage-chat-head-height));
@@ -652,7 +654,7 @@
         }
         .chat-title {
             font-size: var(--font-size-huge);
-            line-height: var(--line-height-huge);
+            line-height: 62px;
         }
         .sendXMPPMessage {
             ul {
@@ -706,10 +708,13 @@
             .box-flyout {
                 .chatbox-navback {
                     display: flex;
-                    @include make-col(2);
+                    flex: 0 0 16.66667%;
+                    max-width: 16.66667%;
+                    margin-left: 1rem;
                     .fa-arrow-left {
+                        line-height: 67px;
                         &:before {
-                            color: white;
+                            color: #5A7088;
                         }
                     }
                 }

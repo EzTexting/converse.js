@@ -198,7 +198,7 @@
 
         #chatrooms {
             padding: 0;
-
+            margin-top: 1.5em;
             .add-chatroom {
                 input[type=button],
                 input[type=submit],
@@ -211,7 +211,9 @@
         }
 
         .controlbox-section {
+            &.profile {
 
+            }
             .controlbox-heading {
                 font-family: var(--heading-font);
                 color: var(--controlbox-heading-color);
@@ -223,11 +225,11 @@
             }
 
             .controlbox-heading--groupchats {
-                color: var(--chatroom-head-color);
+                color: #D2DDE7;
             }
 
             .controlbox-heading--contacts {
-                color: var(--chat-head-color-dark);
+                color: #D2DDE7;
             }
 
             .controlbox-heading__btn {
@@ -292,7 +294,61 @@
         .controlbox-panes {
             height: 100%;
             overflow-y: auto;
-            background-color: var(--controlbox-pane-background-color);
+            &.ez-chat-sidebar {
+                background-color: #334756;
+                .controlbox-pane {
+                    padding: 0;
+                    .userinfo {
+                        padding: 0;
+                        .profile {
+                            background-color: darken(#334756, 10%);
+                            padding: 1rem 0.5rem;
+                        }
+                        .avatar {
+                            border-radius: 100%;
+                            border: 2px solid #0086CE;
+                        }
+                        .username {
+                            font-weight: 600;
+                            color: #ffffff;
+                        }
+                    }
+                }
+                .items-list {
+                    .list-item-link {
+                        color: #ffffff;
+                    }
+                }
+            }
+            &.login {
+                background-image: linear-gradient(-136deg, #1D2836 0%, #2C3744 65%, #233948 100%);
+                .converse-form {
+                    background-color: transparent;
+                }
+                .form-control {
+                    background-color: rgba(#ffffff, 0.32);
+                    color: var(--chat-head-text-color);
+                    border: none;
+                    padding: 1em;
+                    font-size: 1rem;
+                    &::placeholder { color: var(--chat-head-text-color); }
+                    outline: none;
+                    &:focus {
+                        background-color: rgba(#ffffff, 0.5);
+                        outline: none;
+                        box-shadow: none;
+                    }
+                }
+                .form-check {
+                    text-align: center;
+                    font-size: 1rem;
+                    margin-top: 2rem;
+                }
+                .form-check-label {
+                    color: var(--chat-head-text-color);
+                    margin-top: 2px;
+                }
+            }
         }
 
         .controlbox-subtitle {
@@ -302,7 +358,6 @@
         }
 
         .controlbox-pane {
-            background-color: var(--controlbox-pane-background-color);
             border: 0;
             font-size: var(--font-size);
             left: 0;
@@ -311,7 +366,7 @@
             padding: 1em 0 1em 0;
 
             .controlbox-padded {
-                padding-left: 1em;
+                padding-left: 2em;
                 padding-right: 1em;
                 align-items: center;
                 line-height: normal;
@@ -491,7 +546,7 @@
             }
             @media screen and (max-width: $mobile-portrait-length) {
                 .brand-heading {
-                    font-size: 300%;
+                    font-size: 400%;
                 }
             }
         }
@@ -606,9 +661,6 @@
     .converse-svg-logo {
         height: 1em;
     }
-    #controlbox {
-        #converse-login-panel {
-            height: 100%;
-        }
-    }
 }
+
+

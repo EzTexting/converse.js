@@ -12,17 +12,6 @@
         }
     }
 
-    #list-chatrooms-modal {
-        .modal-body {
-			max-height: 70vh;
-            padding-bottom: 0; // When the list of chats overflows, we don't want bottom padding
-        }
-        .available-chatrooms {
-            overflow: auto;
-            padding-bottom: 1rem;
-        }
-    }
-
     #room-details-modal {
         .features-list {
             margin-left: 1em;
@@ -49,8 +38,8 @@
 
 
     .chat-head-chatroom {
-        background-color: var(--chatroom-head-color);
-        border-bottom: var(--chatroom-head-border-bottom);
+        background-color: #ffffff;
+        border-bottom: 1px solid #EDF1F3;
 
         .chatroom-description {
             color: var(--chatroom-head-description-color);
@@ -72,9 +61,9 @@
         a, a:visited, a:hover, a:not([href]):not([tabindex]) {
             &.chatbox-btn {
                 &.fa {
-                    color: var(--chat-head-text-color);
+                    color: #5A7088;
                     &.button-on:before {
-                        color: var(--chatroom-head-button-color);
+                        color: #5A7088
                     }
                 }
             }
@@ -82,7 +71,7 @@
 
         .chatbox-btn {
             &.button-on:before {
-                color: var(--chatroom-head-button-color);
+                color: #5A7088
             }
         }
         .chat-title {
@@ -185,8 +174,6 @@
                     }
                     .occupants-heading {
                         font-family: var(--heading-font);
-                        margin-bottom: 0.5em;
-                        padding-left: 0;
                     }
                     .chatroom-features {
                         display: var(--occupants-features-display);
@@ -309,18 +296,15 @@
         .sendXMPPMessage {
             .chat-toolbar {
                 background-color: white;
-                border-top: var(--message-input-border-top);
-                color: var(--message-input-color);
+                border-top: 2px solid #eff3f5;
+                color: #eff3f5;
                 .fas, .fas:hover,
                 .far, .far:hover,
                 .fa, .fa:hover {
-                    color: var(--message-input-color);
+                    color: #657b93;
                 }
             }
             .chat-textarea {
-                &:active, &:focus{
-                    outline-color: var(--chatroom-head-color);
-                }
                 border-bottom-right-radius: 0;
                 &.correcting {
                     background-color: var(--chatroom-correcting-color);
@@ -371,9 +355,6 @@
                     .occupants-heading {
                         padding: 0;
                     }
-                    .occupant-list {
-                        border-bottom: none;
-                    }
                     .chatroom-features {
                         .feature {
                             font-size: var(--font-size-tiny);
@@ -413,10 +394,17 @@
     .chatroom {
         .box-flyout {
             .chatbox-title {
-                @include make-col(9);
+                @include make-col(12);
+                text-align: center;
+                .chat-title {
+                    line-height: 62px;
+                }
             }
             .chatbox-buttons {
                 @include make-col(3);
+                position: absolute;
+                right: 8px;
+                bottom: 30px;
             }
         }
     }
@@ -430,6 +418,13 @@
             .box-flyout {
                 .chatbox-navback {
                     @include make-col(2);
+                    margin-left: 1rem;
+                    .fa.fa-arrow-left {
+                        line-height: 67px;
+                        &:before {
+                            color: #5A7088;
+                        }
+                    }
                 }
                 .chatbox-title {
                     @include make-col(7);
@@ -447,9 +442,9 @@
 
     .chatroom {
         .box-flyout {
-            background-color: var(--chatroom-head-color);
-            border: var(--flyout-padding) solid var(--chatroom-head-color);
-            border-top: 0.8em solid var(--chatroom-head-color);
+            background-color: #ffffff;
+            border: none;
+            border-top: none;
             width: 100%;
 
             .chatbox-title {
@@ -499,17 +494,21 @@
         }
     }
 }
+@media only screen
+and (device-width : 375px)
+and (device-height : 812px)
+and (-webkit-device-pixel-ratio : 3) {
+    #conversejs:not(.converse-embedded) .converse-chatboxes .chatbox .box-flyout {
+        padding-top: 30px;
+    }
+}
 
-@include media-breakpoint-up(md) {
-    .chatroom {
-        .box-flyout {
-            .occupants {
-                .occupants-header {
-                    .hide-occupants {
-                        display: none;
-                    }
-                }
-            }
-        }
+
+@media only screen
+and (device-width : 414px)
+and (device-height : 896px)
+and (-webkit-device-pixel-ratio : 3) {
+    #conversejs:not(.converse-embedded) .converse-chatboxes .chatbox .box-flyout {
+        padding-top: 40px;
     }
 }

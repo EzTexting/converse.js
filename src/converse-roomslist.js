@@ -112,6 +112,7 @@ converse.plugins.add('converse-roomslist', {
             },
 
             toHTML () {
+                console.log(this.model);
                 return tpl_rooms_list_item(
                     _.extend(this.model.toJSON(), {
                         // XXX: By the time this renders, the _converse.bookmarks
@@ -125,7 +126,8 @@ converse.plugins.add('converse-roomslist', {
                         'info_add_bookmark': __('Bookmark this groupchat'),
                         'info_title': __('Show more information on this groupchat'),
                         'name': this.getRoomsListElementName(),
-                        'open_title': __('Click to open this groupchat')
+                        'open_title': __('Click to open this groupchat'),
+                        'number': this.model.get('from_number')
                     }));
             },
 

@@ -318,7 +318,9 @@ converse.plugins.add('converse-controlbox', {
                 this.el.querySelector('.controlbox-panes').insertAdjacentElement(
                     'afterBegin',
                     this.controlbox_pane.el
-                )
+                );
+                this.el.querySelector('.controlbox-panes').classList.remove('login');
+                this.el.querySelector('.controlbox-panes').classList.add('ez-chat-sidebar');
             },
 
             close (ev) {
@@ -478,7 +480,7 @@ converse.plugins.add('converse-controlbox', {
                     });
                 }
 
-                let jid = form_data.get('jid');
+                let jid = encodeURIComponent(form_data.get('jid'));
                 if (_converse.locked_domain) {
                     const last_part = '@' + _converse.locked_domain;
                     if (jid.endsWith(last_part)) {

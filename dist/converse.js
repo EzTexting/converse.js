@@ -51220,6 +51220,8 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_5__["default"].plugins
         this.el.classList.remove("logged-out");
         this.controlbox_pane = new _converse.ControlBoxPane();
         this.el.querySelector('.controlbox-panes').insertAdjacentElement('afterBegin', this.controlbox_pane.el);
+        this.el.querySelector('.controlbox-panes').classList.remove('login');
+        this.el.querySelector('.controlbox-panes').classList.add('ez-chat-sidebar');
       },
 
       close(ev) {
@@ -51396,7 +51398,7 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_5__["default"].plugins
           });
         }
 
-        let jid = form_data.get('jid');
+        let jid = encodeURIComponent(form_data.get('jid'));
 
         if (_converse.locked_domain) {
           const last_part = '@' + _converse.locked_domain;
@@ -54058,7 +54060,8 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_6__["default"].plugins
           'name': Strophe.xmlunescape(name),
           'jid': groupchat.getAttribute('jid'),
           'open_title': __('Click to open this groupchat'),
-          'info_title': __('Show more information on this groupchat')
+          'info_title': __('Show more information on this groupchat'),
+          'number': 'hello'
         });
         return div.firstElementChild;
       },
@@ -55668,7 +55671,7 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_6__["default"].plugins
 
       render() {
         this.el.innerHTML = templates_room_panel_html__WEBPACK_IMPORTED_MODULE_26___default()({
-          'heading_chatrooms': __('Groupchats'),
+          'heading_chatrooms': __('EZ Chats'),
           'title_new_room': __('Add a new groupchat'),
           'title_list_rooms': __('Query for groupchats')
         });
@@ -59220,6 +59223,7 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_0__["default"].plugins
       },
 
       toHTML() {
+        console.log(this.model);
         return templates_rooms_list_item_html__WEBPACK_IMPORTED_MODULE_3___default()(_.extend(this.model.toJSON(), {
           // XXX: By the time this renders, the _converse.bookmarks
           // collection should already exist if bookmarks are
@@ -59232,7 +59236,8 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_0__["default"].plugins
           'info_add_bookmark': __('Bookmark this groupchat'),
           'info_title': __('Show more information on this groupchat'),
           'name': this.getRoomsListElementName(),
-          'open_title': __('Click to open this groupchat')
+          'open_title': __('Click to open this groupchat'),
+          'number': this.model.get('from_number')
         }));
       },
 
@@ -60311,7 +60316,7 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_5__["default"].plugins
       render() {
         this.el.innerHTML = templates_roster_html__WEBPACK_IMPORTED_MODULE_10___default()({
           'allow_contact_requests': _converse.allow_contact_requests,
-          'heading_contacts': __('Contacts'),
+          'heading_contacts': __('Employees'),
           'title_add_contact': __('Add a contact'),
           'title_sync_contacts': __('Re-sync your contacts')
         });
@@ -92599,26 +92604,19 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*global define 
 
 var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./node_modules/lodash/escape.js")};
 module.exports = function(o) {
-var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
-function print() { __p += __j.call(arguments, '') }
+var __t, __p = '', __e = _.escape;
 __p += '<!-- src/templates/add_chatroom_modal.html -->\n<div class="modal fade" id="add-chatroom-modal" tabindex="-1" role="dialog" aria-labelledby="add-chatroom-modal-label" aria-hidden="true">\n    <div class="modal-dialog" role="document">\n        <div class="modal-content">\n            <div class="modal-header">\n                <h5 class="modal-title"\n                    id="add-chatroom-modal-label">' +
-__e(o.__('Enter a new Groupchat')) +
+__e(o.heading_new_chatroom) +
 '</h5>\n                <button type="button" class="close" data-dismiss="modal" aria-label="Close">\n                    <span aria-hidden="true">×</span>\n                </button>\n            </div>\n            <div class="modal-body">\n                <form class="converse-form add-chatroom">\n                    <div class="form-group">\n                        <label for="chatroom">' +
 __e(o.label_room_address) +
 ':</label>\n                        <input type="text" required="required" name="chatroom" class="form-control" placeholder="' +
 __e(o.chatroom_placeholder) +
-'"/>\n                    </div>\n                    ';
- if (!o._converse.locked_muc_nickname) { ;
-__p += '\n                    <div class="form-group" >\n                        <label for="nickname">' +
-__e(o.__('Nickname')) +
-':</label>\n                        <input type="text" pattern=".*\\S+.*" title="' +
-__e(o.__('This field is required')) +
-'" required="required" name="nickname" value="' +
+'"/>\n                    </div>\n                    <div class="form-group">\n                        <label for="nickname">' +
+__e(o.label_nickname) +
+':</label>\n                        <input type="text" name="nickname" value="' +
 __e(o.nick) +
-'" class="form-control"/>\n                    </div>\n                    ';
- } ;
-__p += '\n                    <input type="submit" class="btn btn-primary" name="join" value="' +
-__e(o.__('Join')) +
+'" class="form-control"/>\n                    </div>\n                    <input type="submit" class="btn btn-primary" name="join" value="' +
+__e(o.label_join) +
 '"/>\n                </form>\n            </div>\n        </div>\n    </div>\n</div>\n';
 return __p
 };
@@ -92743,19 +92741,21 @@ return __p
 var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./node_modules/lodash/escape.js")};
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape;
-__p += '<!-- src/templates/avatar.svg -->\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="' +
+__p += '<!-- src/templates/avatar.svg -->\n<div class="chat-avatar" style="background-image: url(\'' +
+__e(o.image) +
+'\')">\n    <!--<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="' +
 __e(o.classes) +
 '" width="' +
 __e(o.width) +
 '" height="' +
 __e(o.height) +
-'">\n    <image width="' +
+'">-->\n        <!--<image width="' +
 __e(o.width) +
 '" height="' +
 __e(o.height) +
 '" preserveAspectRatio="xMidYMid meet" xlink:href="' +
 __e(o.image) +
-'"/>\n</svg>\n';
+'"/>-->\n    <!--</svg>-->\n</div>\n';
 return __p
 };
 
@@ -92771,7 +92771,7 @@ return __p
 var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./node_modules/lodash/escape.js")};
 module.exports = function(o) {
 var __t, __p = '';
-__p += '<!-- src/templates/background_logo.html -->\n<div class="inner-content converse-brand row">\n    <div class="converse-brand__padding"></div>\n    <div class="converse-brand__heading">\n        <svg height="200px"\n            xmlns="http://www.w3.org/2000/svg"\n            xmlns:xlink="http://www.w3.org/1999/xlink"\n            viewBox="0 0 364 364"\n            version="1.1">\n            <title>Logo Converse</title>\n            <defs>\n                <linearGradient id="gradient" x1="92.14" y1="27.64" x2="267.65" y2="331.62" gradientUnits="userSpaceOnUse">\n                    <stop offset="0" stop-color="#fff1d1"/>\n                    <stop offset="0.05" stop-color="#fae8c1"/>\n                    <stop offset="0.15" stop-color="#f0d5a1"/>\n                    <stop offset="0.27" stop-color="#e7c687"/>\n                    <stop offset="0.4" stop-color="#e1bb72"/>\n                    <stop offset="0.54" stop-color="#dcb264"/>\n                    <stop offset="0.71" stop-color="#daad5c"/>\n                    <stop offset="1" stop-color="#d9ac59"/>\n                </linearGradient>\n                <filter id="shadow">\n                    <feGaussianBlur in="SourceAlpha" stdDeviation="2.3" result="blur1"/>\n                    <feOffset in="blur1" dx="3" dy="3" result="blur2"/>\n                    <feColorMatrix in="blur2" type="matrix" result="blur3"\n                        values="1 0 0 0 0.1\n                                0 1 0 0 0.1\n                                0 0 1 0 0.1\n                                0 0 0 1 0"/>\n                    <feMerge>\n                        <feMergeNode in="blur3"/>\n                        <feMergeNode in="SourceGraphic"/>\n                    </feMerge>\n                </filter>\n            </defs>\n            <g filter="url(#shadow)">\n                <path d="M221.46,103.71c0,18.83-29.36,18.83-29.12,0C192.1,84.88,221.46,84.88,221.46,103.71Z" fill="#d9ac59"/>\n                <path d="M179.9,4.15A175.48,175.48,0,1,0,355.38,179.63,175.48,175.48,0,0,0,179.9,4.15Zm-40.79,264.5c-.23-17.82,27.58-17.82,27.58,0S138.88,286.48,139.11,268.65ZM218.6,168.24A79.65,79.65,0,0,1,205.15,174a12.76,12.76,0,0,0-6.29,4.65L167.54,222a1.36,1.36,0,0,1-2.46-.8v-35.8a2.58,2.58,0,0,0-3.06-2.53c-15.43,3-30.23,7.7-42.73,19.94-38.8,38-29.42,105.69,16.09,133.16a162.25,162.25,0,0,1-91.47-67.27C-3.86,182.26,34.5,47.25,138.37,25.66c46.89-9.75,118.25,5.16,123.73,62.83C265.15,120.64,246.56,152.89,218.6,168.24Z" fill="url(#gradient)"/>\n            </g>\n        </svg>\n        <span class="converse-brand__text">\n            <span>converse<span class="subdued">.js</span></span>\n            <p class="byline">messaging freedom</p>\n        </span>\n    </div>\n</div>\n';
+__p += '<!-- src/templates/background_logo.html -->\n<div class="inner-content converse-brand row">\n    <div class="converse-brand__padding"></div>\n    <div class="converse-brand__heading">\n        <svg width="251px" height="43px" viewBox="0 0 251 43" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">\n                <g id="EzTexting-Alt-Login" transform="translate(-62.000000, -151.000000)">\n                    <g id="Background">\n                        <g id="ez-logo-inv" transform="translate(62.000000, 151.000000)">\n                            <g id="Group">\n                                <path d="M36.9870968,9.54714286 C34.9548387,3.45571429 29.7870968,0.117142857 22.4709677,0.117142857 L15.5612903,0.117142857 C5.86451613,0.117142857 0.116129032,5.91571429 0.116129032,15.6385714 L0.116129032,15.8142857 C0.116129032,22.8428571 3.13548387,27.88 8.53548387,30.0471429 C8.59354839,30.0471429 8.6516129,30.1057143 8.70967742,30.1642857 L15.2129032,38.8914286 C15.2709677,38.95 15.3290323,39.0085714 15.3870968,39.0085714 C15.3870968,39.0085714 15.4451613,39.0085714 15.4451613,39.0085714 C15.5612903,38.95 15.6193548,38.8914286 15.6193548,38.7742857 L15.6193548,31.6285714 C15.6193548,31.4528571 15.7935484,31.2771429 15.9677419,31.2771429 L16.2580645,31.2771429 C16.316129,31.2771429 16.4322581,31.2185714 16.4322581,31.16 C16.4903226,31.1014286 16.4903226,31.0428571 16.4903226,30.9257143 C16.0258065,29.2271429 15.7354839,27.3528571 15.7354839,25.3614286 L15.7354839,25.2442857 C15.7354839,25.01 15.7354839,24.8342857 15.7354839,24.6 C15.7354839,24.4828571 15.6193548,24.3657143 15.5032258,24.3657143 C10.1032258,24.0728571 8.18709677,21.8471429 8.12903226,15.6971429 C8.12903226,8.96142857 10.1612903,6.85285714 16.7225806,6.85285714 L21.0774194,6.85285714 C24.9677419,6.85285714 27.1741935,7.61428571 28.3935484,9.48857143 C29.2645161,10.8357143 29.6709677,12.7685714 29.6709677,15.6971429 C29.6709677,16.2242857 29.6709677,16.7514286 29.6129032,17.3371429 C29.3225806,21.1442857 28.0451613,23.0771429 25.3741935,23.8971429 C25.2580645,23.8971429 25.2,24.0142857 25.2,24.1314286 C25.2,24.5414286 25.1419355,24.8928571 25.1419355,25.3028571 C25.1419355,27.8214286 25.4322581,29.5785714 26.1290323,30.75 C26.1870968,30.8671429 26.3032258,30.8671429 26.3612903,30.8671429 C33.3290323,29.52 37.3354839,24.6 37.7419355,16.9271429 L37.7419355,16.7514286 C37.7419355,16.4 37.8,16.1071429 37.8,15.7557143 L37.8,15.6385714 C37.916129,13.4714286 37.6258065,11.4214286 36.9870968,9.54714286 Z" id="Path" fill="#FFA400"></path>\n                                <path d="M45.7548387,11.3042857 L45.5806452,11.2457143 L39.3677419,2.87 C39.3096774,2.81142857 39.2516129,2.75285714 39.1354839,2.81142857 C39.0774194,2.81142857 39.0193548,2.92857143 39.0193548,2.98714286 L39.0193548,10.0742857 L38.4387097,10.0742857 C38.3806452,10.0742857 38.3225806,10.0742857 38.2645161,10.1328571 C38.2064516,10.1914286 38.2064516,10.25 38.2064516,10.3085714 L38.2064516,10.3671429 C38.6129032,12.0071429 38.8451613,13.7642857 38.8451613,15.6385714 L38.8451613,15.8142857 C38.8451613,15.9314286 38.8451613,16.0485714 38.8451613,16.1657143 L38.8451613,16.2242857 C38.8451613,16.3414286 38.9032258,16.4 39.0193548,16.4585714 L39.0774194,16.4585714 C44.4774194,16.81 46.3935484,19.1528571 46.3935484,25.3614286 C46.3935484,32.1557143 44.1290323,34.44 37.5096774,34.44 L33.1548387,34.44 C29.1483871,34.44 26.883871,33.62 25.6064516,31.6871429 C24.6774194,30.2814286 24.2709677,28.3485714 24.2709677,25.3614286 C24.2709677,24.8342857 24.2709677,24.2485714 24.3290323,23.7214286 C24.6193548,19.8557143 25.8967742,17.8642857 28.6258065,16.9857143 C28.683871,16.9857143 28.7419355,16.8685714 28.7419355,16.7514286 C28.7419355,16.4 28.7419355,16.1071429 28.7419355,15.8142857 C28.7419355,13.4714286 28.4516129,11.8314286 27.8709677,10.6014286 C27.8129032,10.5428571 27.6967742,10.4842857 27.6387097,10.4842857 C20.9612903,11.8314286 17.0709677,16.6928571 16.6645161,24.1314286 L16.6645161,24.2485714 C16.6645161,24.6 16.6064516,24.9514286 16.6064516,25.3028571 L16.6064516,25.42 C16.6064516,27.5871429 16.8967742,29.6371429 17.5354839,31.4528571 C19.6258065,37.4271429 24.7354839,40.7071429 31.9354839,40.7071429 L38.8451613,40.7071429 C48.3677419,40.7071429 54,35.0257143 54,25.42 L54,25.3028571 C54,18.2742857 51.1548387,13.4128571 45.7548387,11.3042857 Z" id="Path" fill="#FFFFFF"></path>\n                            </g>\n                            <path d="M80,31.6278119 C80,32.4580777 79.8830769,33.2290389 79.7076923,34 L61,34 L61,5 L79.2984615,5 C79.4738462,5.71165644 79.5907692,6.60122699 79.5907692,7.37218814 C79.5907692,8.20245399 79.4738462,8.91411043 79.2984615,9.68507157 L66.0276923,9.68507157 L66.0276923,16.8609407 L77.8369231,16.8609407 C78.0123077,17.6319018 78.1292308,18.402863 78.1292308,19.1738241 C78.1292308,19.9447853 78.0123077,20.6564417 77.8369231,21.4867076 L66.0276923,21.4867076 L66.0276923,29.4335378 L79.7076923,29.4335378 C79.9415385,30.1451943 80,30.9161554 80,31.6278119 Z" id="Path" fill="#FFA400"></path>\n                            <path d="M106,31.6871166 C106,32.4580777 105.940874,33.1697342 105.70437,34 L83.2956298,34 C83.1182519,33.4662577 83,32.9325153 83,32.2208589 C83,31.0940695 83.5321337,29.8486708 84.3598972,28.8404908 L98.0771208,10.5153374 L98.8457584,9.50715746 L83.2956298,9.56646217 C83.059126,8.73619632 83,8.14314928 83,7.31288344 C83,6.54192229 83.059126,5.77096115 83.2956298,5 L105.290488,5 C105.40874,5.53374233 105.526992,6.06748466 105.526992,6.7791411 C105.526992,7.96523517 104.994859,9.15132924 104.226221,10.1595092 L90.6863753,28.1288344 L89.622108,29.4335378 L105.645244,29.4335378 C105.940874,30.3231084 106,30.8568507 106,31.6871166 Z" id="Path" fill="#FFA400"></path>\n                            <path d="M135.707379,9.56969697 L127.045802,9.56969697 L127.045802,33.7070707 C126.226463,33.8242424 125.407125,34 124.529262,34 C123.709924,34 122.890585,33.8828283 122.012723,33.7070707 L122.012723,9.56969697 L113.292621,9.56969697 C113.117048,8.80808081 113,8.04646465 113,7.28484848 C113,6.52323232 113.117048,5.76161616 113.292621,5 L135.707379,5 C135.882952,5.76161616 136,6.52323232 136,7.28484848 C136,8.04646465 135.882952,8.74949495 135.707379,9.56969697 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M152.82659,23.8511749 L138.086705,23.8511749 C138.491329,27.3942559 140.572254,29.616188 144.098266,29.616188 C147.16185,29.616188 148.895954,28.3550914 150.283237,27.3942559 C151.381503,28.1148825 152.248555,29.616188 152.421965,30.9373368 C150.687861,32.3785901 147.913295,34 143.751445,34 C137.508671,34 133,29.6762402 133,22.5900783 C133,15.8642298 137.508671,11 143.462428,11 C149.069364,11 153,14.9634465 153,20.7885117 C153,21.9295039 153,22.6501305 152.82659,23.8511749 Z M148.144509,20.4281984 C148.144509,17.845953 146.872832,15.2637076 143.462428,15.2036554 C140.398844,15.2036554 138.491329,17.4255875 138.144509,20.4281984 L148.144509,20.4281984 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero"></path>\n                            <path d="M175,33.640327 C174.539726,33.880109 172.986301,34 172.065753,34 C171.375342,34 170.167123,33.9400545 169.419178,33.8201635 L164.241096,26.027248 L159.350685,33.8201635 C158.717808,33.9400545 157.739726,34 157.049315,34 C155.668493,34 154.747945,33.880109 154,33.640327 L161.364384,22.7901907 L154.287671,12.479564 C155.093151,12.1798365 156.991781,12 157.912329,12 C158.60274,12 159.178082,12.0599455 159.69589,12.119891 L164.528767,19.5531335 L169.016438,12.119891 C169.649315,12 170.282192,12 170.972603,12 C171.950685,12 173.446575,12.119891 174.309589,12.479564 L167.405479,22.8501362 L175,33.640327 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M195,31.7403433 C193.714286,32.8412017 191.551948,34 188.688312,34 C184.12987,34 180.798701,31.972103 180.798701,26.9313305 L180.798701,16.8497854 L177.175325,16.8497854 C177.058442,16.2124464 177,15.5171674 177,14.7639485 C177,14.1266094 177.058442,13.4313305 177.175325,12.7939914 L180.798701,12.7939914 L180.798701,7.23175966 C181.616883,7.05793991 182.493506,7 183.311688,7 C184.12987,7 184.948052,7.05793991 185.766234,7.23175966 L185.766234,12.7939914 L193.655844,12.7939914 C193.831169,13.4313305 193.88961,14.1266094 193.88961,14.7639485 C193.88961,15.4592275 193.831169,16.1545064 193.655844,16.8497854 L185.766234,16.8497854 L185.766234,25.8304721 C185.766234,28.9012876 187.227273,29.7124464 189.331169,29.7124464 C190.850649,29.7124464 192.194805,28.9012876 192.837662,28.3218884 C193.948052,28.9592275 194.824675,30.3497854 195,31.7403433 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M198,7 C198,5.3125 199.346939,4 201.061224,4 C202.653061,4 204,5.375 204,7 C204,8.6875 202.653061,10 201.061224,10 C199.346939,10 198,8.6875 198,7 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M199,33.7608696 L199,12.2391304 C199.813953,12.0597826 200.686047,12 201.5,12 C202.313953,12 203.186047,12.0597826 204,12.2391304 L204,33.7608696 C203.186047,33.9402174 202.372093,34 201.5,34 C200.744186,34 199.872093,33.9402174 199,33.7608696 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M228,20.7769843 L228,33.7659643 C227.176471,33.9414911 226.235294,34 225.470588,34 C224.647059,34 223.823529,33.9414911 222.941176,33.7659643 L222.941176,21.9471627 C222.941176,18.0855741 221.058824,16.6228511 217.764706,16.6228511 C215.764706,16.6228511 214.058824,17.2079403 213.058824,17.7930295 L213.058824,33.7659643 C212.235294,33.9414911 211.352941,34 210.529412,34 C209.705882,34 208.882353,33.9414911 208,33.7659643 L208,15.3356549 C209.882353,13.7559141 213.588235,12.0006465 218.176471,12.0006465 C225,11.9421376 228,15.8622352 228,20.7769843 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M251,14.9062379 L251,33.1019868 C251,39.266019 246.750708,43 240.745042,43 C236.495751,43 233.266289,41.5182615 231.226629,39.1474799 C231.509915,37.84355 232.529745,36.421081 234.05949,35.8283856 C235.475921,37.5472023 237.458924,38.7918626 240.518414,38.7918626 C244.371105,38.7918626 246.014164,36.5988896 246.014164,33.7539517 L246.014164,32.7463695 C244.824363,33.2797954 243.464589,33.5761431 241.764873,33.5761431 C235.872521,33.5761431 231,29.7828925 231,23.0854344 C231,16.3287068 235.929178,12.0020304 242.161473,12.0020304 C245.730878,11.9427609 248.847025,13.1874212 251,14.9062379 Z M246.070822,28.301154 L246.070822,17.3955586 C244.937677,16.7435936 243.691218,16.4472459 242.274788,16.4472459 C238.705382,16.4472459 236.042493,18.9958362 236.042493,22.9668954 C236.042493,26.878685 238.648725,29.3087362 242.274788,29.3087362 C243.974504,29.3087362 245.107649,28.8938494 246.070822,28.301154 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero"></path>\n                        </g>\n                    </g>\n                </g>\n            </g>\n        </svg>\n    </div>\n</div>\n';
 return __p
 };
 
@@ -92964,14 +92964,16 @@ __e(o.url) +
 '" target="_blank" rel="noopener" class="user">\n                ';
  } ;
 __p += '\n                        ' +
+__e( decodeURIComponent(o.jid.split('@')[0]) ) +
+'\n                        <!--' +
 __e( o.nickname || o.fullname || o.jid ) +
-'\n                ';
+'-->\n                ';
  if (o.url) { ;
 __p += '\n                    </a>\n                ';
  } ;
-__p += '\n                <p class="user-custom-message">' +
+__p += '\n                <!--<p class="user-custom-message">' +
 __e( o.status ) +
-'</p>\n            </div>\n        </div>\n    </div>\n    <div class="chatbox-buttons row no-gutters">\n        <a class="chatbox-btn close-chatbox-button fa fa-times" title="' +
+'</p>-->\n            </div>\n        </div>\n    </div>\n    <div class="chatbox-buttons row no-gutters">\n        <a class="chatbox-btn close-chatbox-button fa fa-times" title="' +
 __e(o.info_close) +
 '"></a>\n        <a class="chatbox-btn show-user-details-modal fa fa-id-card" title="' +
 __e(o.info_details) +
@@ -93278,7 +93280,7 @@ __p += '\n                        ';
 __p += '\n                        <li class="feature" ><span class="fa fa-id-card"></span>' +
 __e( o.__('Not anonymous') ) +
 ' - <em>' +
-__e( o.__('All other groupchat participants can see your XMPP address') ) +
+__e( o.__('All other groupchat participants can see your XMPP username') ) +
 '</em></li>\n                        ';
  } ;
 __p += '\n                        ';
@@ -93286,7 +93288,7 @@ __p += '\n                        ';
 __p += '\n                        <li class="feature" ><span class="fa fa-user-secret"></span>' +
 __e( o.__('Semi-anonymous') ) +
 ' - <em>' +
-__e( o.__('Only moderators can see your XMPP address') ) +
+__e( o.__('Only moderators can see your XMPP username') ) +
 '</em></li>\n                        ';
  } ;
 __p += '\n                        ';
@@ -93426,7 +93428,7 @@ __e( o.__('Temporary') ) +
 __p += '\n';
  if (o.nonanonymous) { ;
 __p += '\n<li class="feature" title="' +
-__e( o.__('All other groupchat participants can see your XMPP address') ) +
+__e( o.__('All other groupchat participants can see your XMPP username') ) +
 '"><span class="fa fa-id-card"></span>' +
 __e( o.__('Not anonymous') ) +
 '</li>\n';
@@ -93434,7 +93436,7 @@ __e( o.__('Not anonymous') ) +
 __p += '\n';
  if (o.semianonymous) { ;
 __p += '\n<li class="feature" title="' +
-__e( o.__('Only moderators can see your XMPP address') ) +
+__e( o.__('Only moderators can see your XMPP username') ) +
 '"><span class="fa fa-user-secret"></span>' +
 __e( o.__('Semi-anonymous') ) +
 '</li>\n';
@@ -93496,41 +93498,31 @@ var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./no
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/chatroom_head.html -->\n<div class="chatbox-navback"><i class="fa fa-arrow-left"></i></div>\n<div class="chatbox-title">\n    <div class="chat-title" ';
- if (o._converse.locked_muc_domain !== 'hidden') { ;
-__p += ' title="' +
+__p += '<!-- src/templates/chatroom_head.html -->\n<div class="chatbox-navback"><i class="fa fa-arrow-left"></i></div>\n<div class="chatbox-title">\n    <div class="chat-title" title="' +
 __e(o.jid) +
-'" ';
- } ;
-__p += ' >\n        ';
+'">\n        ';
  if (o.name && o.name !== o.Strophe.getNodeFromJid(o.jid)) { ;
 __p += '\n            ' +
-__e( o.name ) +
-'\n        ';
- } else if (o._converse.locked_muc_domain === 'hidden') { ;
-__p += '\n            ' +
-__e( o.Strophe.getNodeFromJid(o.jid) ) +
+__e( o.name.split('@')[0] ) +
 '\n        ';
  } else { ;
 __p += '\n            ' +
 __e( o.Strophe.getNodeFromJid(o.jid) ) +
-'@' +
-__e( o.Strophe.getDomainFromJid(o.jid) ) +
 '\n        ';
  } ;
 __p += '\n    </div>\n    <!-- Sanitized in converse-muc-views. We want to render links. -->\n    <p class="chatroom-description">' +
 ((__t = (o.description)) == null ? '' : __t) +
-'</p>\n</div>\n<div class="chatbox-buttons row no-gutters">\n    <a class="chatbox-btn close-chatbox-button fa fa-sign-out-alt" title="' +
+'</p>\n</div>\n<!--<div class="chatbox-buttons row no-gutters">-->\n    <!--<a class="chatbox-btn close-chatbox-button fa fa-sign-out-alt" title="' +
 __e(o.info_close) +
-'"></a>\n    ';
+'"></a>-->\n    <!--';
  if (o.affiliation == 'owner') { ;
-__p += '\n    <a class="chatbox-btn configure-chatroom-button fa fa-wrench" title="' +
+__p += '-->\n    <!--<a class="chatbox-btn configure-chatroom-button fa fa-wrench" title="' +
 __e(o.info_configure) +
-' "></a>\n    ';
+' "></a>-->\n    <!--';
  } ;
-__p += '\n    <a class="chatbox-btn show-room-details-modal fa fa-info-circle" title="' +
+__p += '-->\n    <!--<a class="chatbox-btn show-room-details-modal fa fa-info-circle" title="' +
 __e(o.info_details) +
-'"></a>\n</div>\n';
+'"></a>-->\n<!--</div>-->\n';
 return __p
 };
 
@@ -93682,7 +93674,7 @@ __p += '<!-- src/templates/controlbox.html -->\n<div class="flyout box-flyout">\
  if (!o.sticky_controlbox) { ;
 __p += '\n            <a class="chatbox-btn close-chatbox-button fa fa-times"></a>\n        ';
  } ;
-__p += '\n    </div>\n    <div class="controlbox-panes"></div>\n</div>\n';
+__p += '\n    </div>\n    <div class="controlbox-panes login">\n\n    </div>\n</div>\n';
 return __p
 };
 
@@ -93786,8 +93778,6 @@ __p += '\n        <li class="emoji insert-emoji ';
 __p += ' hidden ';
  }; ;
 __p += '"\n            data-emoji="' +
-__e(emoji._shortname) +
-'" title="' +
 __e(emoji._shortname) +
 '">\n                <a href="#" data-emoji="' +
 __e(emoji._shortname) +
@@ -93924,7 +93914,7 @@ __e(o.data) +
 __e(o.name) +
 '" type="text" ';
  if (o.required) { ;
-__p += ' required="required" ';
+__p += ' class="required" ';
  } ;
 __p += ' />\n\n\n';
 return __p
@@ -94002,7 +93992,7 @@ __e(o.value) +
  } ;
 __p += '\n        ';
  if (o.required) { ;
-__p += ' required="required" ';
+__p += ' required ';
  } ;
 __p += ' />\n</div>\n';
 return __p
@@ -94114,7 +94104,7 @@ __e(o.value) +
  } ;
 __p += '\n                ';
  if (o.required) { ;
-__p += ' required="required" ';
+__p += ' class="required" ';
  } ;
 __p += ' />\n            <div class="input-group-text col" title="' +
 __e(o.domain) +
@@ -94137,17 +94127,17 @@ var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./no
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/group_header.html -->\n<a href="#" class="list-toggle group-toggle controlbox-padded" title="' +
+__p += '<!-- src/templates/group_header.html -->\n<!--<a href="#" class="list-toggle group-toggle controlbox-padded" title="' +
 __e(o.desc_group_toggle) +
-'">\n    <span class="fa ';
+'">-->\n    <!--<span class="fa ';
  if (o.toggle_state === o._converse.OPENED) { ;
 __p += ' fa-caret-down ';
  } else { ;
 __p += ' fa-caret-right ';
  } ;
-__p += '">\n    </span> ' +
+__p += '">-->\n    <!--</span> ' +
 __e(o.label_group) +
-'</a>\n<ul class="items-list roster-group-contacts ';
+'</a>-->\n<ul class="items-list roster-group-contacts ';
  if (o.toggle_state === o._converse.CLOSED) { ;
 __p += ' collapsed ';
  } ;
@@ -94215,11 +94205,11 @@ var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./no
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/info.html -->\n';
+__p += '<!-- src/templates/info.html -->\n<!--';
  if (o.render_message) { ;
-__p += '\n    <!-- XXX: Should only ever be rendered if the message text has been sanitized already -->\n    <div class="message chat-info ' +
+__p += '-->\n    <!--&lt;!&ndash; XXX: Should only ever be rendered if the message text has been sanitized already &ndash;&gt;-->\n    <!--<div class="message chat-info ' +
 __e(o.extra_classes) +
-'"\n        data-isodate="' +
+'"-->\n        <!--data-isodate="' +
 __e(o.isodate) +
 '" ';
  if (o.data_name) { ;
@@ -94231,11 +94221,11 @@ __e(o.data_value) +
  } ;
 __p += '>' +
 ((__t = (o.message)) == null ? '' : __t) +
-'</div>\n';
+'</div>-->\n<!--';
  } else { ;
-__p += '\n    <div class="message chat-info ' +
+__p += '-->\n    <!--<div class="message chat-info ' +
 __e(o.extra_classes) +
-'"\n        data-isodate="' +
+'"-->\n        <!--data-isodate="' +
 __e(o.isodate) +
 '" ';
  if (o.data_name) { ;
@@ -94247,9 +94237,9 @@ __e(o.data_value) +
  } ;
 __p += '>' +
 __e(o.message) +
-'</div>\n';
+'</div>-->\n<!--';
  } ;
-__p += '\n';
+__p += '-->\n';
 return __p
 };
 
@@ -94264,10 +94254,8 @@ return __p
 
 var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./node_modules/lodash/escape.js")};
 module.exports = function(o) {
-var __t, __p = '', __e = _.escape;
-__p += '<!-- src/templates/inverse_brand_heading.html -->\n<div>\n    <div class="container brand-heading-container">\n        <h1 class="brand-heading brand-heading--inverse">\n            <svg class="converse-svg-logo"\n                xmlns:svg="http://www.w3.org/2000/svg"\n                xmlns="http://www.w3.org/2000/svg"\n                xmlns:xlink="http://www.w3.org/1999/xlink"\n                viewBox="0 0 364 364">\n                <title>Converse</title>\n                <g class="cls-1" id="g904">\n                    <g data-name="Layer 2">\n                        <g data-name="Layer 7">\n                            <path\n                                class="cls-3"\n                                d="M221.46,103.71c0,18.83-29.36,18.83-29.12,0C192.1,84.88,221.46,84.88,221.46,103.71Z" />\n                            <path\n                                class="cls-4"\n                                d="M179.9,4.15A175.48,175.48,0,1,0,355.38,179.63,175.48,175.48,0,0,0,179.9,4.15Zm-40.79,264.5c-.23-17.82,27.58-17.82,27.58,0S138.88,286.48,139.11,268.65ZM218.6,168.24A79.65,79.65,0,0,1,205.15,174a12.76,12.76,0,0,0-6.29,4.65L167.54,222a1.36,1.36,0,0,1-2.46-.8v-35.8a2.58,2.58,0,0,0-3.06-2.53c-15.43,3-30.23,7.7-42.73,19.94-38.8,38-29.42,105.69,16.09,133.16a162.25,162.25,0,0,1-91.47-67.27C-3.86,182.26,34.5,47.25,138.37,25.66c46.89-9.75,118.25,5.16,123.73,62.83C265.15,120.64,246.56,152.89,218.6,168.24Z" />\n                        </g>\n                    </g>\n                </g>\n            </svg>\n            <span class="brand-name">\n                <span class="brand-name__text">converse<span class="subdued">.js</span></span>\n                <p class="byline">messaging freedom</p>\n            </span>\n        </h1>\n        <p class="brand-subtitle">' +
-__e(o.version_name) +
-'</p>\n        <p class="brand-subtitle"><a target="_blank" rel="nofollow" href="https://conversejs.org">Open Source</a> XMPP chat client brought to you by <a target="_blank" rel="nofollow" href="https://opkode.com">Opkode</a> </p>\n        <p class="brand-subtitle"><a target="_blank" rel="nofollow" href="https://hosted.weblate.org/projects/conversejs/#languages">Translate</a> it into your own language</p>\n    </div>\n</div>\n';
+var __t, __p = '';
+__p += '<!-- src/templates/inverse_brand_heading.html -->\n\n<div class="container brand-heading-container">\n    <h1 class="brand-heading brand-heading--inverse">\n\n        <svg width="251px" height="43px" viewBox="0 0 251 43" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n            <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">\n                <g id="EzTexting-Alt-Login" transform="translate(-62.000000, -151.000000)">\n                    <g id="Background">\n                        <g id="ez-logo-inv" transform="translate(62.000000, 151.000000)">\n                            <g id="Group">\n                                <path d="M36.9870968,9.54714286 C34.9548387,3.45571429 29.7870968,0.117142857 22.4709677,0.117142857 L15.5612903,0.117142857 C5.86451613,0.117142857 0.116129032,5.91571429 0.116129032,15.6385714 L0.116129032,15.8142857 C0.116129032,22.8428571 3.13548387,27.88 8.53548387,30.0471429 C8.59354839,30.0471429 8.6516129,30.1057143 8.70967742,30.1642857 L15.2129032,38.8914286 C15.2709677,38.95 15.3290323,39.0085714 15.3870968,39.0085714 C15.3870968,39.0085714 15.4451613,39.0085714 15.4451613,39.0085714 C15.5612903,38.95 15.6193548,38.8914286 15.6193548,38.7742857 L15.6193548,31.6285714 C15.6193548,31.4528571 15.7935484,31.2771429 15.9677419,31.2771429 L16.2580645,31.2771429 C16.316129,31.2771429 16.4322581,31.2185714 16.4322581,31.16 C16.4903226,31.1014286 16.4903226,31.0428571 16.4903226,30.9257143 C16.0258065,29.2271429 15.7354839,27.3528571 15.7354839,25.3614286 L15.7354839,25.2442857 C15.7354839,25.01 15.7354839,24.8342857 15.7354839,24.6 C15.7354839,24.4828571 15.6193548,24.3657143 15.5032258,24.3657143 C10.1032258,24.0728571 8.18709677,21.8471429 8.12903226,15.6971429 C8.12903226,8.96142857 10.1612903,6.85285714 16.7225806,6.85285714 L21.0774194,6.85285714 C24.9677419,6.85285714 27.1741935,7.61428571 28.3935484,9.48857143 C29.2645161,10.8357143 29.6709677,12.7685714 29.6709677,15.6971429 C29.6709677,16.2242857 29.6709677,16.7514286 29.6129032,17.3371429 C29.3225806,21.1442857 28.0451613,23.0771429 25.3741935,23.8971429 C25.2580645,23.8971429 25.2,24.0142857 25.2,24.1314286 C25.2,24.5414286 25.1419355,24.8928571 25.1419355,25.3028571 C25.1419355,27.8214286 25.4322581,29.5785714 26.1290323,30.75 C26.1870968,30.8671429 26.3032258,30.8671429 26.3612903,30.8671429 C33.3290323,29.52 37.3354839,24.6 37.7419355,16.9271429 L37.7419355,16.7514286 C37.7419355,16.4 37.8,16.1071429 37.8,15.7557143 L37.8,15.6385714 C37.916129,13.4714286 37.6258065,11.4214286 36.9870968,9.54714286 Z" id="Path" fill="#FFA400"></path>\n                                <path d="M45.7548387,11.3042857 L45.5806452,11.2457143 L39.3677419,2.87 C39.3096774,2.81142857 39.2516129,2.75285714 39.1354839,2.81142857 C39.0774194,2.81142857 39.0193548,2.92857143 39.0193548,2.98714286 L39.0193548,10.0742857 L38.4387097,10.0742857 C38.3806452,10.0742857 38.3225806,10.0742857 38.2645161,10.1328571 C38.2064516,10.1914286 38.2064516,10.25 38.2064516,10.3085714 L38.2064516,10.3671429 C38.6129032,12.0071429 38.8451613,13.7642857 38.8451613,15.6385714 L38.8451613,15.8142857 C38.8451613,15.9314286 38.8451613,16.0485714 38.8451613,16.1657143 L38.8451613,16.2242857 C38.8451613,16.3414286 38.9032258,16.4 39.0193548,16.4585714 L39.0774194,16.4585714 C44.4774194,16.81 46.3935484,19.1528571 46.3935484,25.3614286 C46.3935484,32.1557143 44.1290323,34.44 37.5096774,34.44 L33.1548387,34.44 C29.1483871,34.44 26.883871,33.62 25.6064516,31.6871429 C24.6774194,30.2814286 24.2709677,28.3485714 24.2709677,25.3614286 C24.2709677,24.8342857 24.2709677,24.2485714 24.3290323,23.7214286 C24.6193548,19.8557143 25.8967742,17.8642857 28.6258065,16.9857143 C28.683871,16.9857143 28.7419355,16.8685714 28.7419355,16.7514286 C28.7419355,16.4 28.7419355,16.1071429 28.7419355,15.8142857 C28.7419355,13.4714286 28.4516129,11.8314286 27.8709677,10.6014286 C27.8129032,10.5428571 27.6967742,10.4842857 27.6387097,10.4842857 C20.9612903,11.8314286 17.0709677,16.6928571 16.6645161,24.1314286 L16.6645161,24.2485714 C16.6645161,24.6 16.6064516,24.9514286 16.6064516,25.3028571 L16.6064516,25.42 C16.6064516,27.5871429 16.8967742,29.6371429 17.5354839,31.4528571 C19.6258065,37.4271429 24.7354839,40.7071429 31.9354839,40.7071429 L38.8451613,40.7071429 C48.3677419,40.7071429 54,35.0257143 54,25.42 L54,25.3028571 C54,18.2742857 51.1548387,13.4128571 45.7548387,11.3042857 Z" id="Path" fill="#FFFFFF"></path>\n                            </g>\n                            <path d="M80,31.6278119 C80,32.4580777 79.8830769,33.2290389 79.7076923,34 L61,34 L61,5 L79.2984615,5 C79.4738462,5.71165644 79.5907692,6.60122699 79.5907692,7.37218814 C79.5907692,8.20245399 79.4738462,8.91411043 79.2984615,9.68507157 L66.0276923,9.68507157 L66.0276923,16.8609407 L77.8369231,16.8609407 C78.0123077,17.6319018 78.1292308,18.402863 78.1292308,19.1738241 C78.1292308,19.9447853 78.0123077,20.6564417 77.8369231,21.4867076 L66.0276923,21.4867076 L66.0276923,29.4335378 L79.7076923,29.4335378 C79.9415385,30.1451943 80,30.9161554 80,31.6278119 Z" id="Path" fill="#FFA400"></path>\n                            <path d="M106,31.6871166 C106,32.4580777 105.940874,33.1697342 105.70437,34 L83.2956298,34 C83.1182519,33.4662577 83,32.9325153 83,32.2208589 C83,31.0940695 83.5321337,29.8486708 84.3598972,28.8404908 L98.0771208,10.5153374 L98.8457584,9.50715746 L83.2956298,9.56646217 C83.059126,8.73619632 83,8.14314928 83,7.31288344 C83,6.54192229 83.059126,5.77096115 83.2956298,5 L105.290488,5 C105.40874,5.53374233 105.526992,6.06748466 105.526992,6.7791411 C105.526992,7.96523517 104.994859,9.15132924 104.226221,10.1595092 L90.6863753,28.1288344 L89.622108,29.4335378 L105.645244,29.4335378 C105.940874,30.3231084 106,30.8568507 106,31.6871166 Z" id="Path" fill="#FFA400"></path>\n                            <path d="M135.707379,9.56969697 L127.045802,9.56969697 L127.045802,33.7070707 C126.226463,33.8242424 125.407125,34 124.529262,34 C123.709924,34 122.890585,33.8828283 122.012723,33.7070707 L122.012723,9.56969697 L113.292621,9.56969697 C113.117048,8.80808081 113,8.04646465 113,7.28484848 C113,6.52323232 113.117048,5.76161616 113.292621,5 L135.707379,5 C135.882952,5.76161616 136,6.52323232 136,7.28484848 C136,8.04646465 135.882952,8.74949495 135.707379,9.56969697 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M152.82659,23.8511749 L138.086705,23.8511749 C138.491329,27.3942559 140.572254,29.616188 144.098266,29.616188 C147.16185,29.616188 148.895954,28.3550914 150.283237,27.3942559 C151.381503,28.1148825 152.248555,29.616188 152.421965,30.9373368 C150.687861,32.3785901 147.913295,34 143.751445,34 C137.508671,34 133,29.6762402 133,22.5900783 C133,15.8642298 137.508671,11 143.462428,11 C149.069364,11 153,14.9634465 153,20.7885117 C153,21.9295039 153,22.6501305 152.82659,23.8511749 Z M148.144509,20.4281984 C148.144509,17.845953 146.872832,15.2637076 143.462428,15.2036554 C140.398844,15.2036554 138.491329,17.4255875 138.144509,20.4281984 L148.144509,20.4281984 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero"></path>\n                            <path d="M175,33.640327 C174.539726,33.880109 172.986301,34 172.065753,34 C171.375342,34 170.167123,33.9400545 169.419178,33.8201635 L164.241096,26.027248 L159.350685,33.8201635 C158.717808,33.9400545 157.739726,34 157.049315,34 C155.668493,34 154.747945,33.880109 154,33.640327 L161.364384,22.7901907 L154.287671,12.479564 C155.093151,12.1798365 156.991781,12 157.912329,12 C158.60274,12 159.178082,12.0599455 159.69589,12.119891 L164.528767,19.5531335 L169.016438,12.119891 C169.649315,12 170.282192,12 170.972603,12 C171.950685,12 173.446575,12.119891 174.309589,12.479564 L167.405479,22.8501362 L175,33.640327 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M195,31.7403433 C193.714286,32.8412017 191.551948,34 188.688312,34 C184.12987,34 180.798701,31.972103 180.798701,26.9313305 L180.798701,16.8497854 L177.175325,16.8497854 C177.058442,16.2124464 177,15.5171674 177,14.7639485 C177,14.1266094 177.058442,13.4313305 177.175325,12.7939914 L180.798701,12.7939914 L180.798701,7.23175966 C181.616883,7.05793991 182.493506,7 183.311688,7 C184.12987,7 184.948052,7.05793991 185.766234,7.23175966 L185.766234,12.7939914 L193.655844,12.7939914 C193.831169,13.4313305 193.88961,14.1266094 193.88961,14.7639485 C193.88961,15.4592275 193.831169,16.1545064 193.655844,16.8497854 L185.766234,16.8497854 L185.766234,25.8304721 C185.766234,28.9012876 187.227273,29.7124464 189.331169,29.7124464 C190.850649,29.7124464 192.194805,28.9012876 192.837662,28.3218884 C193.948052,28.9592275 194.824675,30.3497854 195,31.7403433 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M198,7 C198,5.3125 199.346939,4 201.061224,4 C202.653061,4 204,5.375 204,7 C204,8.6875 202.653061,10 201.061224,10 C199.346939,10 198,8.6875 198,7 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M199,33.7608696 L199,12.2391304 C199.813953,12.0597826 200.686047,12 201.5,12 C202.313953,12 203.186047,12.0597826 204,12.2391304 L204,33.7608696 C203.186047,33.9402174 202.372093,34 201.5,34 C200.744186,34 199.872093,33.9402174 199,33.7608696 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M228,20.7769843 L228,33.7659643 C227.176471,33.9414911 226.235294,34 225.470588,34 C224.647059,34 223.823529,33.9414911 222.941176,33.7659643 L222.941176,21.9471627 C222.941176,18.0855741 221.058824,16.6228511 217.764706,16.6228511 C215.764706,16.6228511 214.058824,17.2079403 213.058824,17.7930295 L213.058824,33.7659643 C212.235294,33.9414911 211.352941,34 210.529412,34 C209.705882,34 208.882353,33.9414911 208,33.7659643 L208,15.3356549 C209.882353,13.7559141 213.588235,12.0006465 218.176471,12.0006465 C225,11.9421376 228,15.8622352 228,20.7769843 Z" id="Path" fill="#FFFFFF"></path>\n                            <path d="M251,14.9062379 L251,33.1019868 C251,39.266019 246.750708,43 240.745042,43 C236.495751,43 233.266289,41.5182615 231.226629,39.1474799 C231.509915,37.84355 232.529745,36.421081 234.05949,35.8283856 C235.475921,37.5472023 237.458924,38.7918626 240.518414,38.7918626 C244.371105,38.7918626 246.014164,36.5988896 246.014164,33.7539517 L246.014164,32.7463695 C244.824363,33.2797954 243.464589,33.5761431 241.764873,33.5761431 C235.872521,33.5761431 231,29.7828925 231,23.0854344 C231,16.3287068 235.929178,12.0020304 242.161473,12.0020304 C245.730878,11.9427609 248.847025,13.1874212 251,14.9062379 Z M246.070822,28.301154 L246.070822,17.3955586 C244.937677,16.7435936 243.691218,16.4472459 242.274788,16.4472459 C238.705382,16.4472459 236.042493,18.9958362 236.042493,22.9668954 C236.042493,26.878685 238.648725,29.3087362 242.274788,29.3087362 C243.974504,29.3087362 245.107649,28.8938494 246.070822,28.301154 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero"></path>\n                        </g>\n                    </g>\n                </g>\n            </g>\n        </svg>\n    </h1>\n</div>\n\n';
 return __p
 };
 
@@ -94282,23 +94270,18 @@ return __p
 
 var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./node_modules/lodash/escape.js")};
 module.exports = function(o) {
-var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
-function print() { __p += __j.call(arguments, '') }
+var __t, __p = '', __e = _.escape;
 __p += '<!-- src/templates/list_chatrooms_modal.html -->\n<div class="modal fade" id="list-chatrooms-modal" tabindex="-1" role="dialog" aria-labelledby="list-chatrooms-modal-label" aria-hidden="true">\n    <div class="modal-dialog" role="document">\n        <div class="modal-content">\n            <div class="modal-header">\n                <h5 class="modal-title"\n                    id="list-chatrooms-modal-label">' +
 __e(o.heading_list_chatrooms) +
-'</h5>\n                <button type="button" class="close" data-dismiss="modal" aria-label="Close">\n                    <span aria-hidden="true">×</span>\n                </button>\n            </div>\n            <div class="modal-body d-flex flex-column">\n                ';
- if (o.show_form) { ;
-__p += '\n                <form class="converse-form list-chatrooms">\n                    <div class="form-group">\n                        <label for="chatroom">' +
+'</h5>\n                <button type="button" class="close" data-dismiss="modal" aria-label="Close">\n                    <span aria-hidden="true">×</span>\n                </button>\n            </div>\n            <div class="modal-body">\n                <form class="converse-form list-chatrooms">\n                    <div class="form-group">\n                        <label for="chatroom">' +
 __e(o.label_server_address) +
 ':</label>\n                        <input type="text" value="' +
 __e(o.muc_domain) +
 '" required="required" name="server" class="form-control" placeholder="' +
 __e(o.server_placeholder) +
-'"/>\n                    </div>\n                    <input type="submit" class="btn btn-primary" name="list" value="' +
+'"/>\n                    </div>\n                    <input type="submit" class="btn btn-primary" name="join" value="' +
 __e(o.label_query) +
-'"/>\n                </form>\n                ';
- } ;
-__p += '\n                <ul class="available-chatrooms list-group"></ul>\n            </div>\n        </div>\n    </div>\n</div>\n';
+'"/>\n                </form>\n                <ul class="available-chatrooms list-group"></ul>\n            </div>\n        </div>\n    </div>\n</div>\n';
 return __p
 };
 
@@ -94315,7 +94298,7 @@ var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./no
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/login_panel.html -->\n<div id="converse-login-panel" class="controlbox-pane fade-in row no-gutters">\n    <form id="converse-login" class="converse-form" method="post">\n        <div class="conn-feedback fade-in ';
+__p += '<!-- src/templates/login_panel.html -->\n<div id="converse-login-panel" class="controlbox-pane login fade-in row no-gutters">\n    <form id="converse-login" class="converse-form" method="post">\n\n        <div class="conn-feedback fade-in ';
  if (!o.conn_feedback_subject) { ;
 __p += ' hidden ';
  } ;
@@ -94335,33 +94318,27 @@ __p += '\n            <span class="spinner fa fa-spinner centered"/>\n        ';
  } else { ;
 __p += '\n            ';
  if (o.authentication == o.LOGIN || o.authentication == o.EXTERNAL) { ;
-__p += '\n                <div class="form-group">\n                    <label for="converse-login-jid">' +
-__e(o.__("XMPP Address:")) +
-'</label>\n                    <input id="converse-login-jid" class="form-control" autofocus required="required" type="text" name="jid" placeholder="' +
+__p += '\n                <div class="form-group">\n                    <input id="converse-login-jid" class="form-control" autofocus required="required" type="text" name="jid" placeholder="' +
 __e(o.placeholder_username) +
 '"/>\n                </div>\n                ';
  if (o.authentication !== o.EXTERNAL) { ;
-__p += '\n                <div class="form-group">\n                    <label for="converse-login-password">' +
-__e(o.__("Password:")) +
-'</label>\n                    <input id="converse-login-password" class="form-control" required="required" type="password" name="password" placeholder="' +
-__e(o.__('password')) +
-'"/>\n                </div>\n                ';
+__p += '\n                <div class="form-group">\n                    <input id="converse-login-password" class="form-control" required="required" type="password" name="password" placeholder="Password"/>\n                </div>\n                ';
  } ;
-__p += '\n                ';
+__p += '\n                <fieldset class="buttons">\n                    <input class="btn btn-primary btn-full" type="submit" value="' +
+__e(o.__('Log in')) +
+'"/>\n                </fieldset>\n                ';
  if (o.show_trust_checkbox) { ;
-__p += '\n                    <div class="form-group form-check login-trusted">\n                        <input id="converse-login-trusted" type="checkbox" class="form-check-input" name="trusted" ';
+__p += '\n                <div class="form-group form-check login-trusted">\n                    <input id="converse-login-trusted" type="checkbox" class="form-check-input" name="trusted" ';
  if (o._converse.config.get('trusted')) { ;
 __p += ' checked="checked" ';
  } ;
-__p += '/>\n                        <label for="converse-login-trusted" class="form-check-label login-trusted__desc">' +
+__p += '/>\n                    <label for="converse-login-trusted" class="form-check-label login-trusted__desc">' +
 __e(o.__('This is a trusted device')) +
-'</label>\n                        <i class="fa fa-info-circle" data-toggle="popover"\n                           data-title="Trusted device?"\n                           data-content="' +
+'</label>\n                    <i class="fa fa-info-circle" data-toggle="popover"\n                       data-title="Trusted device?"\n                       data-content="' +
 __e(o.__('To improve performance, we cache your data in this browser. Uncheck this box if this is a public computer or if you want your data to be deleted when you log out. It\'s important that you explicitly log out, otherwise not all cached data might be deleted. Please note, when using an untrusted device, OMEMO encryption is NOT available.')) +
-'"></i>\n                    </div>\n                ';
+'"></i>\n                </div>\n                ';
  } ;
-__p += '\n\n                <fieldset class="buttons">\n                    <input class="btn btn-primary" type="submit" value="' +
-__e(o.__('Log in')) +
-'"/>\n                </fieldset>\n            ';
+__p += '\n            ';
  } ;
 __p += '\n            ';
  if (o.authentication == o.ANONYMOUS) { ;
@@ -94400,6 +94377,8 @@ __p += ' chat-msg--action ';
  } ;
 __p += ' ' +
 __e(o.extra_classes) +
+' ' +
+__e(o.sender) +
 '"\n        data-isodate="' +
 __e(o.time) +
 '" data-msgid="' +
@@ -94408,31 +94387,11 @@ __e(o.msgid) +
 __e(o.from) +
 '" data-encrypted="' +
 __e(o.is_encrypted) +
-'">\n    ';
- if (o.type !== 'headline' && !o.is_me_message) { ;
-__p += '\n    <canvas class="avatar chat-msg__avatar" height="36" width="36"></canvas>\n    ';
- } ;
-__p += '\n    <div class="chat-msg__content ';
+'">\n\n    <div class="chat-msg__content ';
  if (o.is_me_message) { ;
 __p += 'chat-msg__content--action';
  } ;
 __p += '">\n        <span class="chat-msg__heading">\n            ';
- if (o.is_me_message) { ;
-__p += '<time timestamp="' +
-__e(o.isodate) +
-'" class="chat-msg__time">' +
-__e(o.pretty_time) +
-'</time>';
- } ;
-__p += '\n            <span class="chat-msg__author chat-msg__' +
-__e(o.sender) +
-'">';
- if (o.is_me_message) { ;
-__p += '**';
- }; ;
-__p +=
-__e(o.username) +
-'</span>\n            ';
  if (!o.is_me_message) { ;
 __p += '\n                ';
 o.roles.forEach(function (role) { ;
@@ -94447,6 +94406,22 @@ __e(o.pretty_time) +
 '</time>\n            ';
  } ;
 __p += '\n            ';
+ if (o.is_me_message) { ;
+__p += '<time timestamp="' +
+__e(o.isodate) +
+'" class="chat-msg__time">' +
+__e(o.pretty_time) +
+'</time>';
+ } ;
+__p += '\n            <span class="chat-msg__author chat-msg__' +
+__e(o.sender) +
+'">';
+ if (o.is_me_message) { ;
+__p += '**';
+ }; ;
+__p +=
+__e(decodeURIComponent(o.username)) +
+'</span>\n            ';
  if (o.is_encrypted) { ;
 __p += '<span class="fa fa-lock"></span>';
  } ;
@@ -94482,11 +94457,7 @@ __p += '\n                    <div class="chat-msg__subject">' +
 __e( o.subject ) +
 '</div>\n                ';
  } ;
-__p += '\n                <div class="chat-msg__text\n                    ';
- if (o.is_single_emoji) { ;
-__p += ' chat-msg__text--larger';
- } ;
-__p += '\n                    ';
+__p += '\n                <div class="chat-msg__text';
  if (o.is_spoiler) { ;
 __p += ' spoiler collapsed';
  } ;
@@ -94494,17 +94465,15 @@ __p += '"><!-- message gets added here via renderMessage --></div>\n            
  if (!o.is_me_message) { ;
 __p += '</div>';
  } ;
-__p += '\n            ';
- if (o.type !== 'headline' && !o.is_me_message && o.sender === 'me') { ;
-__p += '\n            <div class="chat-msg__actions">\n                <button class="chat-msg__action chat-msg__action-edit fa fa-pencil-alt" title="' +
-__e(o.__('Edit this message')) +
-'"></button>\n            </div>\n            ';
- } ;
-__p += '\n\n        ';
+__p += '\n\n\n        ';
  if (!o.is_me_message) { ;
 __p += '</div>';
  } ;
-__p += '\n    </div>\n</div>\n';
+__p += '\n    </div>\n    ';
+ if (o.type !== 'headline' && !o.is_me_message) { ;
+__p += '\n    <canvas class="avatar chat-msg__avatar" height="36" width="36"></canvas>\n    ';
+ } ;
+__p += '\n</div>\n';
 return __p
 };
 
@@ -94553,7 +94522,7 @@ module.exports = function(o) {
 var __t, __p = '', __e = _.escape;
 __p += '<!-- src/templates/new_day.html -->\n<div class="message date-separator" data-isodate="' +
 __e(o.isodate) +
-'">\n    <hr class="separator"/>\n    <time class="separator-text" datetime="' +
+'">\n    <time class="separator-text" datetime="' +
 __e(o.isodate) +
 '"><span>' +
 __e(o.datestring) +
@@ -94619,7 +94588,7 @@ __e(o.show) +
 ' circle" title="' +
 __e(o.hint_show) +
 '"></div>\n        </div>\n        <div class="col occupant-nick-badge">\n            <span class="occupant-nick">' +
-__e(o.nick || o.jid) +
+__e(decodeURIComponent(o.nick) || decodeURIComponent(o.jid)) +
 '</span>\n            <span class="occupant-badges">\n                ';
  if (o.affiliation === "owner") { ;
 __p += '\n                    <span class="badge badge-groupchat">' +
@@ -94815,49 +94784,15 @@ var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./no
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/profile_view.html -->\n<div class="userinfo controlbox-padded">\n<div class="controlbox-section profile d-flex">\n    <a class="show-profile" href="#">\n        <canvas class="avatar align-self-center" height="40" width="40"></canvas>\n    </a>\n    <span class="username w-100 align-self-center">' +
-__e(o.fullname) +
-'</span>\n    ';
- if (o._converse.show_client_info) { ;
-__p += '\n        <a class="controlbox-heading__btn show-client-info fa fa-info-circle align-self-center" title="' +
-__e(o.info_details) +
-'"></a>\n    ';
- } ;
-__p += '\n    ';
+__p += '<!-- src/templates/profile_view.html -->\n<div class="userinfo controlbox-padded">\n<div class="controlbox-section profile d-flex">\n    <a class="show-profile" href="#">\n        <canvas class="avatar align-self-center" height="30" width="30"></canvas>\n    </a>\n    <span class="username w-100 align-self-center">\n        ' +
+__e(decodeURIComponent(o.fullname.split('@')[0])) +
+'\n    </span>\n    ';
  if (o._converse.allow_logout) { ;
 __p += '\n        <a class="controlbox-heading__btn logout fa fa-sign-out-alt align-self-center" title="' +
 __e(o.title_log_out) +
 '"></a>\n    ';
  } ;
-__p += '\n</div>\n<div class="d-flex xmpp-status">\n    <span class="' +
-__e(o.chat_status) +
-' w-100 align-self-center" data-value="' +
-__e(o.chat_status) +
-'">\n        <span class="\n            ';
- if (o.chat_status === 'online') { ;
-__p += ' fa fa-circle chat-status chat-status--online';
- } ;
-__p += '\n            ';
- if (o.chat_status === 'dnd') { ;
-__p += ' fa fa-minus-circle chat-status chat-status--busy ';
- } ;
-__p += '\n            ';
- if (o.chat_status === 'away') { ;
-__p += ' fa fa-circle chat-status chat-status--away';
- } ;
-__p += '\n            ';
- if (o.chat_status === 'xa') { ;
-__p += ' far fa-circle chat-status chat-status--xa ';
- } ;
-__p += '\n            ';
- if (o.chat_status === 'offline') { ;
-__p += ' fa fa-circle chat-status chat-status--offline';
- } ;
-__p += '"></span> ' +
-__e(o.status_message) +
-'</span>\n    <a class="controlbox-heading__btn change-status fa fa-pencil-alt" title="' +
-__e(o.title_change_status) +
-'" data-toggle="modal" data-target="#changeStatusModal"></a>\n</div>\n</div>\n';
+__p += '\n</div>\n</div>\n';
 return __p
 };
 
@@ -94874,15 +94809,15 @@ var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./no
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/register_link.html -->\n<fieldset class="switch-form">\n    ';
+__p += '<!-- src/templates/register_link.html -->\n<!--<fieldset class="switch-form">-->\n    <!--';
  if (!o._converse.auto_login && o._converse.CONNECTION_STATUS[o.connection_status] !== 'CONNECTING') { ;
-__p += '\n        <p>' +
+__p += '-->\n        <!--<p>' +
 __e( o.__("Don't have a chat account?") ) +
-'</p>\n        <p><a class="register-account toggle-register-login" href="#converse/register">' +
+'</p>-->\n        <!--<p><a class="register-account toggle-register-login" href="#converse/register">' +
 __e(o.__("Create an account")) +
-'</a></p>\n    ';
+'</a></p>-->\n    <!--';
  } ;
-__p += '\n</fieldset>\n';
+__p += '-->\n<!--</fieldset>-->\n';
 return __p
 };
 
@@ -95143,6 +95078,8 @@ __e(o.jid) +
 __e(o.name) +
 '"\n       title="' +
 __e(o.open_title) +
+'"\n       data-room-number="' +
+__e(o.number) +
 '"\n       href="#">' +
 __e(o.name) +
 '</a>\n    <a class="right room-info icon-room-info"\n       data-room-jid="' +
@@ -95167,11 +95104,11 @@ module.exports = function(o) {
 var __t, __p = '', __e = _.escape;
 __p += '<!-- src/templates/room_panel.html -->\n<!-- <div id="chatrooms"> -->\n<div class="d-flex controlbox-padded">\n    <span class="w-100 controlbox-heading controlbox-heading--groupchats">' +
 __e(o.heading_chatrooms) +
-'</span>\n    <a class="controlbox-heading__btn show-list-muc-modal fa fa-list-ul" title="' +
+'</span>\n    <!--<a class="controlbox-heading__btn show-list-muc-modal fa fa-list-ul" title="' +
 __e(o.title_list_rooms) +
-'" data-toggle="modal" data-target="#list-chatrooms-modal"></a>\n    <a class="controlbox-heading__btn show-add-muc-modal fa fa-plus" title="' +
+'" data-toggle="modal" data-target="#list-chatrooms-modal"></a>-->\n    <!--<a class="controlbox-heading__btn show-add-muc-modal fa fa-plus" title="' +
 __e(o.title_new_room) +
-'" data-toggle="modal" data-target="#add-chatrooms-modal"></a>\n</div>\n<div class="list-container open-rooms-list rooms-list-container"></div>\n<div class="list-container bookmarks-list rooms-list-container"></div>\n<!-- </div> -->\n';
+'" data-toggle="modal" data-target="#add-chatrooms-modal"></a>-->\n</div>\n<div class="list-container open-rooms-list rooms-list-container"></div>\n<div class="list-container bookmarks-list rooms-list-container"></div>\n<!-- </div> -->\n';
 return __p
 };
 
@@ -95186,19 +95123,10 @@ return __p
 
 var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./node_modules/lodash/escape.js")};
 module.exports = function(o) {
-var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
-function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/rooms_list.html -->\n<a href="#" class="list-toggle open-rooms-toggle controlbox-padded" title="' +
-__e(o.desc_rooms) +
-'">\n    <span class="fa ';
- if (o.toggle_state === o._converse.OPENED) { ;
-__p += ' fa-caret-down ';
- } else { ;
-__p += ' fa-caret-right ';
- } ;
-__p += '">\n    </span> ' +
+var __t, __p = '', __e = _.escape;
+__p += '<!-- src/templates/rooms_list.html -->\n<!--' +
 __e(o.label_rooms) +
-'</a>\n<div class="items-list rooms-list open-rooms-list"></div>\n';
+'-->\n\n<div class="items-list rooms-list open-rooms-list"></div>\n';
 return __p
 };
 
@@ -95235,6 +95163,8 @@ __p += '\n<a class="list-item-link open-room available-room w-100"\n    data-roo
 __e(o.jid) +
 '"\n    title="' +
 __e(o.open_title) +
+'" data-number="' +
+__e(o.number) +
 '" href="#">' +
 __e(o.name || o.jid) +
 '</a>\n\n';
@@ -95261,17 +95191,17 @@ __e(o.info_add_bookmark) +
  } ;
 __p += '"\n   href="#"></a>\n';
  } ;
-__p += '\n\n<a class="list-item-action room-info fa fa-info-circle" data-room-jid="' +
+__p += '\n\n<!--<a class="list-item-action room-info fa fa-info-circle" data-room-jid="' +
 __e(o.jid) +
-'"\n   title="' +
+'"-->\n   <!--title="' +
 __e(o.info_title) +
-'" href="#"></a>\n\n<a class="list-item-action fa fa-sign-out-alt close-room"\n   data-room-jid="' +
+'" href="#"></a>-->\n\n<!--<a class="list-item-action fa fa-sign-out-alt close-room"-->\n   <!--data-room-jid="' +
 __e(o.jid) +
-'"\n   data-room-name="' +
+'"-->\n   <!--data-room-name="' +
 __e(o.name || o.jid) +
-'"\n   title="' +
+'"-->\n   <!--title="' +
 __e(o.info_leave_room) +
-'" href="#"></a>\n\n</div>\n';
+'" href="#"></a>-->\n\n</div>\n';
 return __p
 };
 
@@ -95306,15 +95236,15 @@ var _ = {escape:__webpack_require__(/*! ./node_modules/lodash/escape.js */ "./no
 module.exports = function(o) {
 var __t, __p = '', __e = _.escape, __j = Array.prototype.join;
 function print() { __p += __j.call(arguments, '') }
-__p += '<!-- src/templates/roster.html -->\n<div class="d-flex controlbox-padded">\n    <span class="w-100 controlbox-heading controlbox-heading--contacts">' +
+__p += '<!-- src/templates/roster.html -->\n\n\n<div class="d-flex controlbox-padded">\n    <span class="w-100 controlbox-heading controlbox-heading--contacts">' +
 __e(o.heading_contacts) +
-'</span>\n    <a class="controlbox-heading__btn sync-contacts fa fa-sync" title="' +
+'</span>\n    <!--<a class="controlbox-heading__btn sync-contacts fa fa-sync" title="' +
 __e(o.title_sync_contacts) +
-'"></a>\n    ';
+'"></a>-->\n    ';
  if (o.allow_contact_requests) { ;
-__p += '\n        <a class="controlbox-heading__btn add-contact fa fa-user-plus"\n           title="' +
+__p += '\n        <!--<a class="controlbox-heading__btn add-contact fa fa-user-plus"-->\n           <!--title="' +
 __e(o.title_add_contact) +
-'"\n           data-toggle="modal"\n           data-target="#add-contact-modal"></a>\n    ';
+'"-->\n           <!--data-toggle="modal"-->\n           <!--data-target="#add-contact-modal"></a>-->\n    ';
  } ;
 __p += '\n</div>\n\n<form class="roster-filter-form"></form>\n\n<div class="list-container roster-contacts"></div>\n';
 return __p
@@ -95337,25 +95267,7 @@ __p += '<!-- src/templates/roster_filter.html -->\n<form class="controlbox-padde
  if (!o.visible) { ;
 __p += ' hidden ';
  } ;
-__p += '">\n    <div class="form-inline flex-nowrap">\n        <div class="filter-by d-flex flex-nowrap">\n            <span class="fa fa-user ';
- if (o.filter_type === 'contacts') { ;
-__p += ' selected ';
- } ;
-__p += '" data-type="contacts" title="' +
-__e(o.title_contact_filter) +
-'"></span>\n            <span class="fa fa-users ';
- if (o.filter_type === 'groups') { ;
-__p += ' selected ';
- } ;
-__p += '" data-type="groups" title="' +
-__e(o.title_group_filter) +
-'"></span>\n            <span class="fa fa-circle ';
- if (o.filter_type === 'state') { ;
-__p += ' selected ';
- } ;
-__p += '" data-type="state" title="' +
-__e(o.title_status_filter) +
-'"></span>\n        </div>\n\n        <div class="btn-group">\n            <input ';
+__p += '">\n    <div class="form-inline flex-nowrap">\n        <div class="btn-group">\n            <input ';
  if (o.filter_text) { ;
 __p += ' value="' +
 __e(o.filter_text) +
@@ -95419,7 +95331,25 @@ __p += ' selected="selected" ';
  } ;
 __p += '\n                value="offline">' +
 __e(o.label_offline) +
-'</option>\n        </select>\n    </div>\n</form>\n';
+'</option>\n        </select>\n\n        <div class="filter-by d-flex flex-nowrap">\n            <span class="fa fa-user ';
+ if (o.filter_type === 'contacts') { ;
+__p += ' selected ';
+ } ;
+__p += '" data-type="contacts" title="' +
+__e(o.title_contact_filter) +
+'"></span>\n            <span class="fa fa-users ';
+ if (o.filter_type === 'groups') { ;
+__p += ' selected ';
+ } ;
+__p += '" data-type="groups" title="' +
+__e(o.title_group_filter) +
+'"></span>\n            <span class="fa fa-circle ';
+ if (o.filter_type === 'state') { ;
+__p += ' selected ';
+ } ;
+__p += '" data-type="state" title="' +
+__e(o.title_status_filter) +
+'"></span>\n        </div>\n    </div>\n</form>\n';
 return __p
 };
 
@@ -95457,12 +95387,12 @@ __p += '\n    <span class="contact-name ';
 __p += ' unread-msgs ';
  } ;
 __p += '">' +
-__e(o.display_name) +
+__e(decodeURIComponent(o.display_name.split('@')[0])) +
 '</span></a>\n';
  if (o.allow_contact_removal) { ;
-__p += '\n<a class="list-item-action remove-xmpp-contact far fa-trash-alt" title="' +
+__p += '\n<!--<a class="list-item-action remove-xmpp-contact far fa-trash-alt" title="' +
 __e(o.desc_remove) +
-'" href="#"></a>\n';
+'" href="#"></a>-->\n';
  } ;
 __p += '\n';
 return __p

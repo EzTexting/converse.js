@@ -327,7 +327,8 @@ converse.plugins.add('converse-muc-views', {
                     'name': Strophe.xmlunescape(name),
                     'jid': groupchat.getAttribute('jid'),
                     'open_title': __('Click to open this groupchat'),
-                    'info_title': __('Show more information on this groupchat')
+                    'info_title': __('Show more information on this groupchat'),
+                    'number': 'hello'
                 });
                 return div.firstElementChild;
             },
@@ -1816,7 +1817,7 @@ converse.plugins.add('converse-muc-views', {
 
             render () {
                 this.el.innerHTML = tpl_room_panel({
-                    'heading_chatrooms': __('Groupchats'),
+                    'heading_chatrooms': __('EZ Chats'),
                     'title_new_room': __('Add a new groupchat'),
                     'title_list_rooms': __('Query for groupchats')
                 });

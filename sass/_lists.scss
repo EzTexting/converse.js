@@ -1,7 +1,7 @@
 #conversejs {
     .list-container {
         text-align: left;
-        padding: 0.3em 0;
+        padding: 1em 0;
 
         .list-toggle {
             font-family: var(--heading-font);
@@ -29,7 +29,16 @@
             height: 2.5em;
 
             &.unread-msgs {
-                font-weight: bold;
+                &:before {
+                    content: "";
+                    display: block;
+                    width: 10px;
+                    height: 10px;
+                    background-color: #2FCA80;
+                    position: absolute;
+                    border-radius: 50%;
+                    left: 11px;
+                }
             }
 
             .list-item-link {
@@ -56,10 +65,9 @@
             .list-item-action {
                 opacity: 0;
                 font-size: var(--font-size-tiny);
-                padding: 0.3em 0 0 0;
+                padding: 0;
                 margin: 0 0 0 var(--inline-action-margin);
                 width: 2em;
-                height: 2em;
                 &:before {
                     font-size: var(--font-size);
                 }
@@ -81,9 +89,9 @@
             }
 
             &.open {
-                background-color: var(--list-item-open-color);
+                background-color: #5A7088;
                 &:hover {
-                    background-color: var(--list-item-open-hover-color) !important;
+                    background-color: rgba(95, 169, 255, 0.3);
                 }
                 a {
                     color: white;
@@ -115,7 +123,7 @@
             }
 
             &:hover {
-                background-color: var(--controlbox-head-color-lighten-45-percent);
+                background-color: rgba(90, 112, 136, 0.5);
                 .fa, .far, .fas {
                     opacity: 1;
                 }

@@ -9,6 +9,7 @@
 body.converse-fullscreen {
     margin: 0;
     background-color: var(--global-background-color);
+    font-family: 'Open Sans', sans-serif;
 }
 
 #conversejs-bg {
@@ -91,8 +92,8 @@ body.converse-fullscreen {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     color: var(--text-color);
-    font-family: var(--normal-font);
-    font-size: var(--font-size);
+    font-family: inherit;
+    font-size: var(--font-size-large);
     direction: ltr;
     z-index: 1031; // One more than bootstrap navbar
 
@@ -135,7 +136,7 @@ body.converse-fullscreen {
 
         .brand-name {
             color: var(--link-color);
-            display: flex;
+
             flex-direction: column;
             align-items: center;
             margin-top: -0.5em;
@@ -247,7 +248,6 @@ body.converse-fullscreen {
     input[type=submit], input[type=button],
     input[type=text], input[type=password],
     button {
-        font-size: var(--font-size);
         padding: 0.25em;
         min-height: 0;
     }
@@ -337,6 +337,10 @@ body.converse-fullscreen {
         .fa, .far, .fas {
             color: #fff;
             margin-right: 0.5em;
+        }
+        &.full {
+            width: 100%;
+            display: inline-block;
         }
     }
 
@@ -504,24 +508,35 @@ body.converse-fullscreen {
 
     .badge {
         text-shadow: none;
-        color: white;
     }
 
-    .badge-light {
-        color: var(--text-color);
+    .badge {
+        color: white;
     }
 
     .btn-primary, .button-primary, .badge-primary {
         background-color: var(--primary-color);
         border-color: transparent;
         &:hover {
-            background-color: var(--primary-color-dark);
+            background-color: var(--primary-color);
             border-color: transparent;
         }
         &.active {
-            background-color: var(--primary-color-dark) !important;
+            background-color: var(--primary-color) !important;
             border-color: transparent !important;
         }
+        &:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        &:active {
+            background-color: var(--primary-color) !important;
+            border-color: transparent;
+        }
+    }
+    .btn-full {
+        display: inline-block;
+        width: 100% !important;
     }
 
     .badge-groupchat {
@@ -577,6 +592,15 @@ body.converse-fullscreen {
             border-color: var(--danger-color-dark);
         }
     }
+
+    .chat-textarea-chatbox-selected {
+        border: 1px solid #578308;
+        margin: 0;
+    }
+    .chat-textarea-chatroom-selected {
+        border: 2px solid var(--link-color);
+        margin: 0;
+    }
 }
 
 @media screen and (max-width: 575px) {
@@ -599,30 +623,30 @@ body.converse-fullscreen {
 
 
 @media screen and (min-width: 576px) {
-    #conversejs .offset-sm-2 {
-        margin-left: 16.666667%;
-    }
+  #conversejs .offset-sm-2 {
+    margin-left: 16.666667%;
+  }
 }
 @media screen and (min-width: 768px) {
-    #conversejs .offset-md-2 {
-        margin-left: 16.666667%;
-    }
-    #conversejs .offset-md-3 {
-        margin-left: 25%;
-    }
+  #conversejs .offset-md-2 {
+    margin-left: 16.666667%;
+  }
+  #conversejs .offset-md-3 {
+    margin-left: 25%;
+  }
 }
 @media screen and (min-width: 992px) {
-    #conversejs .offset-lg-2 {
-        margin-left: 16.666667%;
-    }
-    #conversejs .offset-lg-3 {
-        margin-left: 25%;
-    }
+  #conversejs .offset-lg-2 {
+    margin-left: 16.666667%;
+  }
+  #conversejs .offset-lg-3 {
+    margin-left: 25%;
+  }
 }
 @media screen and (min-width: 1200px) {
-    #conversejs .offset-xl-2 {
-        margin-left: 16.666667%;
-    }
+  #conversejs .offset-xl-2 {
+    margin-left: 16.666667%;
+  }
 }
 @media screen and (max-height: 450px) {
   #conversejs {
