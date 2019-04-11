@@ -1,5 +1,5 @@
 /*global path, __dirname, module, process */
-'use strict'
+'use strict';
 const minimist = require('minimist');
 const path = require('path');
 const webpack = require('webpack');
@@ -104,10 +104,57 @@ const config = {
             "snabbdom-style":           path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom-style"),
             "tovnode":                  path.resolve(__dirname, "node_modules/snabbdom/dist/tovnode"),
             "underscore":               path.resolve(__dirname, "src/underscore-shim"),
-            "xss":                      path.resolve(__dirname, "node_modules/xss/dist/xss")
+            "xss":                      path.resolve(__dirname, "node_modules/xss/dist/xss"),
+            "libphonenumber":           path.resolve(__dirname, "node_modules/libphonenumber-js/build")
         }
     }
 }
+
+const plugin = {
+    entry: path.resolve(__dirname, 'plugins/converse-ez-plugins.js'),
+    externals: [{
+        "window": "window"
+    }],
+    output: {
+        path: path.resolve(__dirname, 'plugins/dist'),
+        filename: 'ez-support.js'
+    },
+    devtool: 'source-map',
+    plugins: [
+        new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/)
+    ],
+    module: {
+
+    },
+    resolve: {
+        extensions: ['.js'],
+        modules: [
+            'node_modules',
+            path.resolve(__dirname, "src")
+        ],
+        alias: {
+            "IPv6":                     path.resolve(__dirname, "node_modules/urijs/src/IPv6"),
+            "SecondLevelDomains":       path.resolve(__dirname, "node_modules/urijs/src/SecondLevelDomains"),
+            "awesomplete":              path.resolve(__dirname, "node_modules/awesomplete-avoid-xss/awesomplete"),
+            "formdata-polyfill":        path.resolve(__dirname, "node_modules/formdata-polyfill/FormData"),
+            "jquery":                   path.resolve(__dirname, "src/jquery-stub"),
+            "punycode":                 path.resolve(__dirname, "node_modules/urijs/src/punycode"),
+            "snabbdom":                 path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom"),
+            "snabbdom-attributes":      path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom-attributes"),
+            "snabbdom-class":           path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom-class"),
+            "snabbdom-dataset":         path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom-dataset"),
+            "snabbdom-eventlisteners":  path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom-eventlisteners"),
+            "snabbdom-props":           path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom-props"),
+            "snabbdom-style":           path.resolve(__dirname, "node_modules/snabbdom/dist/snabbdom-style"),
+            "tovnode":                  path.resolve(__dirname, "node_modules/snabbdom/dist/tovnode"),
+            "underscore":               path.resolve(__dirname, "src/underscore-shim"),
+            "xss":                      path.resolve(__dirname, "node_modules/xss/dist/xss"),
+            "libphonenumber":           path.resolve(__dirname, "node_modules/libphonenumber-js/build")
+        }
+    }
+}
+
+
 
 function extend (o1, o2) {
     for (var i in o2) {

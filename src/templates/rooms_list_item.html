@@ -1,14 +1,14 @@
 <div class="list-item controlbox-padded available-chatroom d-flex flex-row
     {[ if (o.currently_open) { ]} open {[ } ]}
     {[ if (o.num_unread_general) { ]} unread-msgs {[ } ]}"
-    data-room-jid="{{{o.jid}}}">
+    data-room-jid="{{{o.jid}}}" id="room_{{{o.from_number_national}}}_{{{o.customer_number_national}}}">
 
 {[ if (o.num_unread) { ]}
     <span class="list-item-badge badge badge-room-color msgs-indicator">{{{ o.num_unread }}}</span>
 {[ } ]}
 <a class="list-item-link open-room available-room w-100"
     data-room-jid="{{{o.jid}}}"
-    title="{{{o.open_title}}}" data-number="{{{o.number}}}" href="#">{{{o.name || o.jid}}}</a>
+    title="{{{o.open_title}}}" data-number-id="{{{o.from_number_national}}}" data-chat-number="{{{o.from_number}}}" data-customer-number="{{{o.customer_number}}}" href="#">{{{o.customer_number || o.name || o.jid}}}</a>
 
 {[ if (o.allow_bookmarks) { ]}
 <a class="list-item-action fa {[ if (o.bookmarked) { ]} fa-bookmark remove-bookmark button-on {[ } else { ]} add-bookmark fa-bookmark {[ } ]}"

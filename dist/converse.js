@@ -59223,7 +59223,6 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_0__["default"].plugins
       },
 
       toHTML() {
-        console.log(this.model);
         return templates_rooms_list_item_html__WEBPACK_IMPORTED_MODULE_3___default()(_.extend(this.model.toJSON(), {
           // XXX: By the time this renders, the _converse.bookmarks
           // collection should already exist if bookmarks are
@@ -59346,6 +59345,8 @@ _converse_headless_converse_core__WEBPACK_IMPORTED_MODULE_0__["default"].plugins
         await _converse.api.rooms.open(jid, data);
 
         _converse.api.chatviews.get(jid).focus();
+
+        _converse.api.emit('ezRoomOpened');
       },
 
       closeRoom(ev) {
@@ -93503,11 +93504,11 @@ __e(o.jid) +
 '">\n        ';
  if (o.name && o.name !== o.Strophe.getNodeFromJid(o.jid)) { ;
 __p += '\n            ' +
-__e( o.name.split('@')[0] ) +
+__e( o.name.split('@')[0].split('_')[0] + '&' + o.name.split('@')[0].split('_')[1]) +
 '\n        ';
  } else { ;
 __p += '\n            ' +
-__e( o.Strophe.getNodeFromJid(o.jid) ) +
+__e( o.Strophe.getNodeFromJid(o.jid).split('_')[0] + ' & ' + o.Strophe.getNodeFromJid(o.jid).split('_')[1]) +
 '\n        ';
  } ;
 __p += '\n    </div>\n    <!-- Sanitized in converse-muc-views. We want to render links. -->\n    <p class="chatroom-description">' +
@@ -95126,7 +95127,7 @@ module.exports = function(o) {
 var __t, __p = '', __e = _.escape;
 __p += '<!-- src/templates/rooms_list.html -->\n<!--' +
 __e(o.label_rooms) +
-'-->\n\n<div class="items-list rooms-list open-rooms-list"></div>\n';
+'-->\n\n<div class="items-list rooms-list open-rooms-list">\n\n</div>\n';
 return __p
 };
 
@@ -95153,6 +95154,10 @@ __p += ' unread-msgs ';
  } ;
 __p += '"\n    data-room-jid="' +
 __e(o.jid) +
+'" id="room_' +
+__e(o.from_number_national) +
+'_' +
+__e(o.customer_number_national) +
 '">\n\n';
  if (o.num_unread) { ;
 __p += '\n    <span class="list-item-badge badge badge-room-color msgs-indicator">' +
@@ -95163,10 +95168,14 @@ __p += '\n<a class="list-item-link open-room available-room w-100"\n    data-roo
 __e(o.jid) +
 '"\n    title="' +
 __e(o.open_title) +
-'" data-number="' +
-__e(o.number) +
+'" data-number-id="' +
+__e(o.from_number_national) +
+'" data-chat-number="' +
+__e(o.from_number) +
+'" data-customer-number="' +
+__e(o.customer_number) +
 '" href="#">' +
-__e(o.name || o.jid) +
+__e(o.customer_number || o.name || o.jid) +
 '</a>\n\n';
  if (o.allow_bookmarks) { ;
 __p += '\n<a class="list-item-action fa ';

@@ -112,7 +112,7 @@ converse.plugins.add('converse-roomslist', {
             },
 
             toHTML () {
-                console.log(this.model);
+
                 return tpl_rooms_list_item(
                     _.extend(this.model.toJSON(), {
                         // XXX: By the time this renders, the _converse.bookmarks
@@ -223,6 +223,7 @@ converse.plugins.add('converse-roomslist', {
                 }
                 await _converse.api.rooms.open(jid, data);
                 _converse.api.chatviews.get(jid).focus();
+                _converse.api.emit('ezRoomOpened')
             },
 
             closeRoom (ev) {

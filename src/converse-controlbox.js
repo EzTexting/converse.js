@@ -493,7 +493,7 @@ converse.plugins.add('converse-controlbox', {
                 this.connect(jid, form_data.get('password'));
             },
 
-            connect (jid, password) {
+             connect (jid, password) {
                 if (jid) {
                     const resource = Strophe.getResourceFromJid(jid);
                     if (!resource) {

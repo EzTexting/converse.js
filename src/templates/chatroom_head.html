@@ -2,9 +2,9 @@
 <div class="chatbox-title">
     <div class="chat-title" title="{{{o.jid}}}">
         {[ if (o.name && o.name !== o.Strophe.getNodeFromJid(o.jid)) { ]}
-            {{{ o.name.split('@')[0] }}}
+            {{{ o.name.split('@')[0].split('_')[0] + '&' + o.name.split('@')[0].split('_')[1]}}}
         {[ } else { ]}
-            {{{ o.Strophe.getNodeFromJid(o.jid) }}}
+            {{{ o.Strophe.getNodeFromJid(o.jid).split('_')[0] + ' & ' + o.Strophe.getNodeFromJid(o.jid).split('_')[1]}}}
         {[ } ]}
     </div>
     <!-- Sanitized in converse-muc-views. We want to render links. -->

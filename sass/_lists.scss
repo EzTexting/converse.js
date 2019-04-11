@@ -1,8 +1,21 @@
+h5.chat-number-title {
+    margin: 1.2em 0 0.5em 0 !important;
+    font-weight: 600 !important;
+    color: #D2DDE7 !important;
+    background-color: rgba(0,0,0,0.4) !important;
+    padding: 0.5em 1em !important;
+    .fa.fa-mobile {
+        &:before {
+            color: #ffffff;
+        }
+        padding-right: 0.5em;
+    }
+}
+
 #conversejs {
     .list-container {
         text-align: left;
         padding: 1em 0;
-
         .list-toggle {
             font-family: var(--heading-font);
             font-weight: var(--list-toggle-font-weight);
@@ -17,7 +30,6 @@
 
     .items-list {
         text-align: left;
-
         .list-item {
             border: none;
             clear: both;
@@ -27,7 +39,6 @@
             text-shadow: 0 1px 0 var(--text-shadow-color);
             word-wrap: break-word;
             height: 2.5em;
-
             &.unread-msgs {
                 &:before {
                     content: "";
@@ -40,7 +51,6 @@
                     left: 11px;
                 }
             }
-
             .list-item-link {
                 color: var(--list-item-link-color);
                 &:hover {

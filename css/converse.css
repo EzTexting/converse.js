@@ -11363,6 +11363,17 @@ body.converse-fullscreen {
     line-height: var(--line-height);
     width: 100%; }
 
+h5.chat-number-title {
+  margin: 1.2em 0 0.5em 0 !important;
+  font-weight: 600 !important;
+  color: #D2DDE7 !important;
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  padding: 0.5em 1em !important; }
+  h5.chat-number-title .fa.fa-mobile {
+    padding-right: 0.5em; }
+    h5.chat-number-title .fa.fa-mobile:before {
+      color: #ffffff; }
+
 #conversejs .list-container {
   text-align: left;
   padding: 1em 0; }
