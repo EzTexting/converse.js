@@ -63,6 +63,14 @@ converse.plugins.add('EZ_RoomJoin', {
     initialize: function () {
         const _converse = this._converse;
         _converse.api.listen.on('connected', () => {
+            _converse.api.settings.set(
+                {'visible_toolbar_buttons': {
+                    'toggle_occupants': false,
+                    },
+                    'hidden_occupants': true
+                }
+
+                );
             const $iq = converse.env.$iq;
             const jid = _converse.api.user.jid();
             const Strophe = converse.env.Strophe;
@@ -91,6 +99,7 @@ converse.plugins.add('EZ_RoomPoll', {
             const jid = _converse.api.user.jid();
             const Strophe = converse.env.Strophe;
             const iq = $iq({
+                'from': jid,
                 'to': 'sms.xmpp.callfire.com',
                 'type': "get"
             }).c("query", {xmlns: Strophe.NS.DISCO_ITEMS});
@@ -104,6 +113,7 @@ converse.plugins.add('EZ_RoomPoll', {
                         }
                         const available_rooms = _converse.api.rooms.get();
                         modifyRoom(available_rooms);
+                        console.log(available_rooms);
                     }).catch(iq => console.log(iq));
             }, 30000);
         });
