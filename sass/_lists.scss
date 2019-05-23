@@ -39,16 +39,20 @@ h5.chat-number-title {
             text-shadow: 0 1px 0 var(--text-shadow-color);
             word-wrap: break-word;
             height: 2.5em;
+            &:before {
+                content: "";
+                display: block;
+                width: 10px;
+                height: 9px;
+                background-color: transparent;
+                position: sticky;
+                border-radius: 50%;
+                left: 0;
+                margin-right: 10px;
+            }
             &.unread-msgs {
                 &:before {
-                    content: "";
-                    display: block;
-                    width: 10px;
-                    height: 10px;
                     background-color: #2FCA80;
-                    position: absolute;
-                    border-radius: 50%;
-                    left: 11px;
                 }
             }
             .list-item-link {

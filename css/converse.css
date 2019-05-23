@@ -10966,7 +10966,7 @@ body.converse-fullscreen {
     overflow-x: hidden;
     padding: 1em 0 1em 0; }
     #conversejs #controlbox .controlbox-pane .controlbox-padded {
-      padding-left: 2em;
+      padding-left: 1em;
       padding-right: 1em;
       align-items: center;
       line-height: normal; }
@@ -11397,15 +11397,18 @@ h5.chat-number-title {
     text-shadow: 0 1px 0 var(--text-shadow-color);
     word-wrap: break-word;
     height: 2.5em; }
-    #conversejs .items-list .list-item.unread-msgs:before {
+    #conversejs .items-list .list-item:before {
       content: "";
       display: block;
       width: 10px;
-      height: 10px;
-      background-color: #2FCA80;
-      position: absolute;
+      height: 9px;
+      background-color: transparent;
+      position: sticky;
       border-radius: 50%;
-      left: 11px; }
+      left: 0;
+      margin-right: 10px; }
+    #conversejs .items-list .list-item.unread-msgs:before {
+      background-color: #2FCA80; }
     #conversejs .items-list .list-item .list-item-link {
       color: var(--list-item-link-color);
       margin: auto;
